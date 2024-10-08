@@ -208,47 +208,23 @@ function posts_migration()
             // print_r($data);
 
             foreach ($data as $data) {
-                $new_post = array(
-                    'post_title' => $data['col-a'],
-                    'post_content' => $data['col-b'],
-                    'post_status' => 'publish'
-                );
+                // $new_post = array(
+                //     'post_title' => $data['col-a'],
+                //     'post_content' => $data['col-c'],
+                //     'post_status' => 'publish'
+                // );
 
-                echo $post_id = wp_insert_post($new_post);
+                // $post_id = wp_insert_post($new_post);
 
-
-                // Check if post is created successfully
-                if (!is_wp_error($post_id)) {
-                    // Assuming you have the image URL or file, upload it and get the attachment ID
-                    $image_url = $data['col-c']; // URL of the image or file path
-                    $upload_dir = wp_upload_dir(); // Get upload directory
-                    $image_data = file_get_contents($image_url); // Get image data
-                    $filename = basename($image_url); // Get image name
-
-                    // Upload the file to the media library
-                    $file = wp_mkdir_p($upload_dir['path']) ? $upload_dir['path'] . '/' . $filename : $upload_dir['basedir'] . '/' . $filename;
-                    file_put_contents($file, $image_data);
-
-                    // Check the file type and create an attachment in the media library
-                    $wp_filetype = wp_check_filetype($filename, null);
-                    $attachment = array(
-                        'post_mime_type' => $wp_filetype['type'],
-                        'post_title' => sanitize_file_name($filename),
-                        'post_content' => '',
-                        'post_status' => 'inherit',
-                    );
-
-                    $attach_id = wp_insert_attachment($attachment, $file, $post_id);
-
-                    // Generate attachment metadata and update it
-                    require_once(ABSPATH . 'wp-admin/includes/image.php');
-                    $attach_data = wp_generate_attachment_metadata($attach_id, $file);
-                    wp_update_attachment_metadata($attach_id, $attach_data);
-
-                    // Set the post thumbnail (featured image)
-                    set_post_thumbnail($post_id, $attach_id);
+                $parts = explode(",", $data['col-c']);
+                foreach($parts as $cat){
+                    if(has_term('', $cat)){
+                        echo "exist: ".$cat;
+                    }else{
+                        echo "not exist: ".$cat;
+                    }
+                    echo "<br/>";
                 }
-
             }
 
         } catch (Exception $e) {
