@@ -332,11 +332,10 @@ function posts_migration()
                     );
                     wp_update_post($post_array);
 
-
-                    echo "update done";
+                    echo "update done  ";
 
                 } else {
-                    // IF NO POST ID FOUND, THEN CREATE NEW ONES
+                    // IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST.
                     $parts = explode(",", $data['col-c']);
                     $arr = array();
                     foreach ($parts as $cat) {
@@ -375,20 +374,28 @@ function posts_migration()
                         $post_id = wp_insert_post($new_post);
                     }
 
-                    // Update Google Sheet column F with the post ID
+                    try{
+                        // Update Google Sheet column F with the post ID only if it is empty
                     $updateRange = 'F' . $currentRow;
                     $updateBody = new \Google_Service_Sheets_ValueRange([
                         'range' => $updateRange,
                         'majorDimension' => 'ROWS',
-                        'values' => [['values' => $post_id]],
+                        'values' => [[$post_id]], // This is where you insert the post ID
                     ]);
+                
+                    // Update the sheet only if col-f (post ID) is empty
                     $sheets->spreadsheets_values->update(
                         $spreadsheetId,
                         $updateRange,
                         $updateBody,
                         ['valueInputOption' => 'USER_ENTERED']
                     );
+                    }catch(Exception $e){
+                        echo "post id present ";
+                        // echo $e->getMessage();
+                    }
 
+                   // echo "ROW AFFECTED"."  ". $currentRow;
                     $currentRow++;
                 }
 

@@ -2,14 +2,20 @@
 change google_sheet_url to sheet_id in production apps. 
 set parent category , child category for posts
 
+====================================================================================
 
-** when migration start -> 
-existing post filled into google sheets and paste the postid automatic 
-and new post will initialized and filled id into google sheet. 
+DUE WORK ==> 17 oct 2024.
+managing tags, thumbnail image, 
 
-** problems: 
-if existing post in wordpress has then it might filled into google sheet. but when re-migration start
-then, either all posts might be deleted or based on post id it will updated. 
+WORKFLOW => 
+1. when migration start, it will insert all the posts into wordpress posts, means overlapping them. 
+2. when no post id in the sheet filled, it will filled them first time. 
 
-either delete all the existing wordpress posts and fill by sheet posts. 
-or, keep both and puts id of posts of sheets and update by them. 
+OK => 
+1. when no post id on sheet, fresh migration - ok!
+2. every time migration runs works well. 
+
+PROBLEMS => 
+1. if one post id missing that time updation failed, means it create a new post into db. 
+
+===================================================================================
