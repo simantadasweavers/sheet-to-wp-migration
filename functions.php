@@ -304,8 +304,52 @@ function posts_migration()
 
             foreach ($data as $data) {
 
-                if(! empty($data['col-a'])){
+                // if post title present -> col-a 
+                if (!empty($data['col-a'])) {
+
+                    // // if post tags not present
+                    // if($data['col-d']){
+                    //     $parts = explode(",", $data['col-d']);
+                    //     $arr = array();
+                    //     foreach ($parts as $tag) {
+                    //         if (tag_exists($tag)) {
+                    //             $tag = get_term_by('name', $tag, 'post_tag');
+                    //             if ($tag) {
+                    //                 $tag_id = $tag->term_id;
+                    //             }
+                    //             array_push($arr, $tag_id);
+                    //         } else {
+                    //             $tag = wp_insert_term(
+                    //                 $tag,  // The tag name
+                    //                 'post_tag'  // Taxonomy: 'post_tag' for WordPress tags
+                    //             );
+
+                    //             // Check for errors and get the tag ID
+                    //             if (!is_wp_error($tag)) {
+                    //                 $tag_id = $tag['term_id'];
+                    //                 array_push($arr, $tag_id);
+                    //             }
+                    //         }
+                    //     }
+
+                    //    try{
+                    //     $post_array = array(
+                    //         'ID' => $data['col-f'],
+                    //         'tags_input' => $arr,
+                    //     );
+                    //     wp_update_post($post_array);
+
+                    //     echo "tags update done";
+                    // }catch(Exception $e){
+                    //     echo $e->getMessage();
+                    //    }
+                    // }else{
+                    //     continue;
+                    // }
+
+                    // col-f -> post_id 
                     if ($data['col-f']) {
+                        
                         $parts = explode(",", $data['col-c']);
                         $arr = array();
                         foreach ($parts as $cat) {
@@ -316,7 +360,7 @@ function posts_migration()
                                     $cat,  // The category name
                                     'category'      // Taxonomy: 'category' for WordPress categories
                                 );
-    
+
                                 // Check for errors and get the category ID
                                 if (!is_wp_error($category)) {
                                     $catid = $category['term_id'];
@@ -324,20 +368,48 @@ function posts_migration()
                                 }
                             }
                         }
-    
+
+                        $parts = explode(",", $data['col-d']);
+                        $tags_arr = array();
+                        foreach ($parts as $tag) {
+                            if (tag_exists($tag)) {
+                                $tag = get_term_by('name', $tag, 'post_tag');
+                                if ($tag) {
+                                    $tag_id = $tag->term_id;
+                                }
+                                array_push($tags_arr, $tag_id);
+                            } else {
+                                $tag = wp_insert_term(
+                                    $tag,  // The tag name
+                                    'post_tag'  // Taxonomy: 'post_tag' for WordPress tags
+                                );
+
+                                // Check for errors and get the tag ID
+                                if (!is_wp_error($tag)) {
+                                    $tag_id = $tag['term_id'];
+                                    array_push($tags_arr, $tag_id);
+                                }
+                            }
+                        }
+
                         // updaing post fields by post id
                         $post_array = array(
                             'ID' => $data['col-f'],
                             'post_title' => $data['col-a'],
                             'post_content' => $data['col-b'],
                             'post_category' => $arr,
+                            'tags_input' => $tags_arr,
                         );
                         wp_update_post($post_array);
-    
-                       // echo "update done";
-    
+
+                        echo "update done";
+
+
+
                     } else {
-                        // IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST.
+                        /** IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST. **/
+
+                        // managing categories
                         $parts = explode(",", $data['col-c']);
                         $arr = array();
                         foreach ($parts as $cat) {
@@ -348,7 +420,7 @@ function posts_migration()
                                     $cat,  // The category name
                                     'category'      // Taxonomy: 'category' for WordPress categories
                                 );
-    
+
                                 // Check for errors and get the category ID
                                 if (!is_wp_error($category)) {
                                     $catid = $category['term_id'];
@@ -356,14 +428,13 @@ function posts_migration()
                                 }
                             }
                         }
-    
                         if ($arr == NULL) {
                             $new_post = array(
                                 'post_title' => $data['col-a'],
                                 'post_content' => $data['col-b'],
                                 'post_status' => 'publish',
                             );
-    
+
                             $post_id = wp_insert_post($new_post);
                         } else {
                             $new_post = array(
@@ -372,19 +443,82 @@ function posts_migration()
                                 'post_status' => 'publish',
                                 'post_category' => $arr,  // Category ID(s)
                             );
-    
+
                             $post_id = wp_insert_post($new_post);
                         }
-    
-                        try{
+
+                        // managing tags for the post
+                        $parts = explode(",", $data['col-d']);
+                        $arr = array();
+                        foreach ($parts as $tag) {
+                            if (tag_exists($tag)) {
+                                $tag = get_term_by('name', $tag, 'post_tag');
+                                if ($tag) {
+                                    $tag_id = $tag->term_id;
+                                }
+                                array_push($arr, $tag_id);
+                            } else {
+                                $tag = wp_insert_term(
+                                    $tag,  // The tag name
+                                    'post_tag'  // Taxonomy: 'post_tag' for WordPress tags
+                                );
+
+                                // Check for errors and get the tag ID
+                                if (!is_wp_error($tag)) {
+                                    $tag_id = $tag['term_id'];
+                                    array_push($arr, $tag_id);
+                                }
+                            }
+                        }
+
+                        if ($arr != NULL) {
+                            $post_array = array(
+                                'ID' => $post_id,
+                                'tags_input' => $arr,  // 'tags_input' is for tags, not 'post_category'
+                            );
+                            wp_update_post($post_array);
+                        }
+
+                        try {
                             // Update Google Sheet column F with the post ID only if it is empty
+                            $updateRange = 'F' . $currentRow;
+                            $updateBody = new \Google_Service_Sheets_ValueRange([
+                                'range' => $updateRange,
+                                'majorDimension' => 'ROWS',
+                                'values' => [[$post_id]], // This is where you insert the post ID
+                            ]);
+
+                            // Update the sheet only if col-f (post ID) is empty
+                            $sheets->spreadsheets_values->update(
+                                $spreadsheetId,
+                                $updateRange,
+                                $updateBody,
+                                ['valueInputOption' => 'USER_ENTERED']
+                            );
+
+                        } catch (Exception $e) {
+                            echo $e->getMessage();
+                        }
+
+
+                        // $currentRow++;
+
+                    }
+
+
+
+                } else {
+                    $post_id = 0;
+
+                    try {
+                        // Update Google Sheet column F with the post ID only if it is empty
                         $updateRange = 'F' . $currentRow;
                         $updateBody = new \Google_Service_Sheets_ValueRange([
                             'range' => $updateRange,
                             'majorDimension' => 'ROWS',
                             'values' => [[$post_id]], // This is where you insert the post ID
                         ]);
-    
+
                         // Update the sheet only if col-f (post ID) is empty
                         $sheets->spreadsheets_values->update(
                             $spreadsheetId,
@@ -392,39 +526,8 @@ function posts_migration()
                             $updateBody,
                             ['valueInputOption' => 'USER_ENTERED']
                         );
-    
-                        }catch(Exception $e){
-                            echo $e->getMessage();
-                        }
-                        
-                       
-                        // $currentRow++;
-                       
-                    }
 
-                    
-
-                }else{
-                    $post_id = 0;
-
-                    try{
-                        // Update Google Sheet column F with the post ID only if it is empty
-                    $updateRange = 'F' . $currentRow;
-                    $updateBody = new \Google_Service_Sheets_ValueRange([
-                        'range' => $updateRange,
-                        'majorDimension' => 'ROWS',
-                        'values' => [[$post_id]], // This is where you insert the post ID
-                    ]);
-
-                    // Update the sheet only if col-f (post ID) is empty
-                    $sheets->spreadsheets_values->update(
-                        $spreadsheetId,
-                        $updateRange,
-                        $updateBody,
-                        ['valueInputOption' => 'USER_ENTERED']
-                    );
-
-                    }catch(Exception $e){
+                    } catch (Exception $e) {
                         echo $e->getMessage();
                     }
 
