@@ -5,8 +5,7 @@
  * Version:           1.1.1
  * Requires at least: 5.2
  * Requires PHP:      7.2
- * Author:            Shimanta Das
- * Author URI:        https://microcodes.in/
+ * Author:            Shimanta Das(Abhimanyu Saha Team)
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
  * Text Domain:       google sheet, post migration,
@@ -20,12 +19,7 @@
 try{
     function my_custom_plugin_activate()
     {
-    //    require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
-    
-       // getting database auth details
-    //    $path = $_SERVER['DOCUMENT_ROOT'];
-    //    include_once $path . '/wp-config.php';
-    
+
        global $wpdb;
        $host = $wpdb->dbhost;
        $user = $wpdb->dbuser;
@@ -51,6 +45,8 @@ try{
           `auth_provider_x509_cert_url` varchar(250)  NULL,
           `client_x509_cert_url` varchar(250)  NULL,
           `universe_domain` varchar(120) NULL,
+          `cron_job_time` varchar(4) NULL,
+          `post_type` varchar(10) NULL,
           `created_at` varchar(200) NULL
         );
         ";

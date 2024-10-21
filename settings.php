@@ -25,6 +25,14 @@
   <br>
   <br>
 
+  <?php 
+          $arr = get_post_types();
+          foreach ($arr as $arr) {
+            echo $arr['post'];
+            echo "<br/>";
+          }
+          ?>  
+
   <div class="row">
     <div class="col-2"></div>
     <div class="col-8">
@@ -34,12 +42,27 @@
           <input type="text" class="form-control" name="sheet_url" id="sheet_url" required>
         </div>
         <div class="mb-3">
-          <label for="formFile" class="form-label">JSON auth file</label>
+          <label for="formFile" class="form-label">JSON Auth File</label>
           <input class="form-control" type="file" name="formFile" id="formFile" accept="application/json" required>
         </div>
         <div class="mb-3">
-          <input type="checkbox" class="form-check-input" id="duplicate_post" name="duplicate_post" value="something" checked>
-          <label class="form-check-label" for="check1">Duplicate Posts ? </label>
+        <label for="cron-time" class="form-label">CRON Job Time</label>
+          <select class="form-select" id="cron-time" aria-label="Default select example">
+            <option value="5" selected>5 Mintes</option>
+            <option value="7">7 Mintes</option>
+            <option value="10">10 Mintes</option>
+            <option value="15">15 Mintes</option>
+            <option value="30">30 Mintes(Recomended)</option>
+            <option value="60">1 Hour.</option>
+          </select>
+        </div>
+        <div class="mb-3">
+        
+        <label for="post-type" class="form-label">Post Type</label>
+          <select class="form-select" id="post-type" aria-label="Default select example">
+          
+          <option value="7">7 Mintes</option>
+          </select>
         </div>
         <button type="submit" id="submit-btn" class="btn btn-primary">Submit</button>
       </form>

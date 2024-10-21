@@ -39,5 +39,10 @@ OK =>
 PROBLEMS/RESTRICTION => 
 1. if one post id missing that time updation failed, means it create a new post into db. 
 
+IMPROVEMENT => 
+1. NO DUPLICATE POST 
+2. SET CRON TIME BY SELECT BOX - 2 , 4 , 6, 8, 10, 20, 30
+3. SELECT POST TYPE -> custom post type, default -> post, page
+4. LIST ALL CRONS AND DELETE OPTIONS 
 
 ===================================================================================

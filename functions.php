@@ -1,9 +1,6 @@
 <?php
 session_start();
 
-include('trash-functions.php');
-include('posts-cron-functions.php');
-
 
 add_action('wp_ajax_save_settings', 'save_settings');
 function save_settings()
