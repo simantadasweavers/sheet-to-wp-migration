@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+include('trash-functions.php');
+include('posts-cron-functions.php');
+
 
 add_action('wp_ajax_save_settings', 'save_settings');
 function save_settings()
@@ -56,196 +59,53 @@ function save_settings()
 
 
 /************************************************/
-add_action('wp_ajax_posts_migration', 'posts_migration');
-// function posts_migration()
-// {
-//     global $wpdb;
-//     $table = $wpdb->prefix . 'sheet_to_wp_post';
-//     $query = $wpdb->prepare("SELECT * FROM $table ORDER BY id DESC LIMIT 1");
-//     $row = $wpdb->get_row($query);
+// Add custom cron schedule interval
+function addCronIntervals($schedules)
+{
+    $schedules['sixty_seconds'] = array(
+        'interval' => 70,
+        'display' => __('Every 70 Seconds'),
+    );
+    return $schedules;
+}
+add_filter('cron_schedules', 'addCronIntervals');
 
+// Handle AJAX request for migration
+add_action('wp_ajax_posts_migration', 'handle_posts_migration');
 
-//     if ($row) {
-//         try {
-//             require __DIR__ . '/vendor/autoload.php';
+function handle_posts_migration()
+{
+    if (isset($_POST['schedule_migration'])) {
+        // Check if the cron job is already scheduled
+        if (!wp_next_scheduled('custom_posts_migration')) {
+            wp_schedule_event(time(), 'sixty_seconds', 'custom_posts_migration'); // Correct action name
+            wp_send_json_success("Cron job scheduled.");
+        } else {
+            wp_send_json_error("Cron job already scheduled.");
+        }
+    } else {
+        wp_send_json_error("Migration cron job not scheduled.");
+    }
 
-//             // Set Google Client using database values
-//             $client = new \Google_Client();
-//             $client->setApplicationName('My PHP App');
-//             $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
-//             $client->setAccessType('offline');
+    wp_die(); // Properly end AJAX request
+}
 
-//             $client->setAuthConfig([
-//                 "type" => $row->account_type,
-//                 "project_id" => $row->project_id,
-//                 "private_key_id" => $row->private_key_id,
-//                 "private_key" => $row->private_key,
-//                 "client_email" => $row->client_email,
-//                 "client_id" => $row->client_id,
-//                 "auth_uri" => $row->auth_uri,
-//                 "token_uri" => $row->token_uri,
-//                 "auth_provider_x509_cert_url" => $row->auth_provider_x509_cert_url,
-//                 "client_x509_cert_url" => $row->client_x509_cert_url,
-//                 "universe_domain" => $row->universe_domain
-//             ]);
-
-//             $sheets = new \Google_Service_Sheets($client);
-
-
-//             // Step 1: Retrieve WordPress posts
-//             $spreadsheetId = "$row->google_sheet_url";  // Replace with your Google Sheet ID
-//             $range = 'A2';  // Start inserting data from this range
-
-//             $args = array(
-//                 'post_type' => 'post',
-//                 'post_status' => 'publish',
-//                 'posts_per_page' => -1,  // Fetch all posts
-//             );
-//             $posts = new WP_Query($args);
-
-//             if ($posts->have_posts()) {
-//                 $post_data = [];
-
-//                 // Step 3: Loop through posts and prepare data for Google Sheets
-//                 while ($posts->have_posts()) {
-//                     $posts->the_post();
-//                     $post_data[] = [
-//                         get_the_title(),      // Post Title
-//                         get_the_content(),    // Post Content
-//                         get_the_date(),       // Post Date
-//                         get_the_author(),     // Post Author
-//                         get_permalink(),      // Post URL
-//                     ];
-//                 }
-
-//                 // Reset post data
-//                 wp_reset_postdata();
-
-//                 // Step 4: Insert data into Google Sheets
-//                 $body = new \Google_Service_Sheets_ValueRange([
-//                     'values' => $post_data,  // Use the prepared post data
-//                 ]);
-
-//                 $params = ['valueInputOption' => 'RAW'];
-
-//                 $result = $sheets->spreadsheets_values->append(
-//                     $spreadsheetId,
-//                     $range,
-//                     $body,
-//                     $params
-//                 );
-
-//                 echo "Posts have been successfully added to Google Sheet.";
-//             } else {
-//                 echo "No posts found.";
-//             }
-
-//             // step 2: these will fetch all posts from the sheet.
-//             $data = [];
-//             $currentRow = 2;
-
-//             $spreadsheetId = "$row->google_sheet_url";
-//             $range = 'A2:H';
-//             $rows = $sheets->spreadsheets_values->get($spreadsheetId, $range, ['majorDimension' => 'ROWS']);
-//             if (isset($rows['values'])) {
-//                 foreach ($rows['values'] as $row) {
-
-//                     if (empty($row[0])) {
-//                         break;
-//                     }
-
-//                     $data[] = [
-//                         'col-a' => $row[0],
-//                         'col-b' => $row[1],
-//                         'col-c' => $row[2],
-//                         'col-d' => $row[3],
-//                         'col-e' => $row[4],
-//                         'col-f' => $row[5],
-//                         'col-g' => $row[6],
-//                         'col-h' => $row[7],
-//                     ];
-
-//                     // Update Google Sheet column I with current timestamp
-//                     $updateRange = 'I' . $currentRow;
-//                     $updateBody = new \Google_Service_Sheets_ValueRange([
-//                         'range' => $updateRange,
-//                         'majorDimension' => 'ROWS',
-//                         'values' => [['values' => date('c')]],
-//                     ]);
-//                     $sheets->spreadsheets_values->update(
-//                         $spreadsheetId,
-//                         $updateRange,
-//                         $updateBody,
-//                         ['valueInputOption' => 'USER_ENTERED']
-//                     );
-//                     $currentRow++;
-//                 }
-//             }
-
-//             // print_r($data);
-
-//             foreach ($data as $data) {
-
-//                 $parts = explode(",", $data['col-c']);
-//                 $arr = array();
-//                 foreach ($parts as $cat) {
-//                     if (category_exists($cat)) {
-//                         array_push($arr, get_cat_ID($cat));
-//                     } else {
-//                         $category = wp_insert_term(
-//                             $cat,  // The category name
-//                             'category',      // Taxonomy: 'category' for WordPress categories
-//                         );
-
-//                         // Check for errors and get the category ID
-//                         if (is_wp_error($category)) {
-//                         } else {
-//                             $catid = $category['term_id'];
-//                             array_push($arr, $catid);
-//                         }
-//                     }
-//                 }
-
-//                 if ($arr == NULL) {
-//                     $new_post = array(
-//                         'post_title' => $data['col-a'],
-//                         'post_content' => $data['col-b'],
-//                         'post_status' => 'publish',
-//                     );
-
-//                     echo $post_id = wp_insert_post($new_post);
-//                     echo "  ";
-//                 } else {
-//                     $new_post = array(
-//                         'post_title' => $data['col-a'],
-//                         'post_content' => $data['col-b'],
-//                         'post_status' => 'publish',
-//                         'post_category' => $arr,  // Category ID(s) go here
-//                     );
-
-//                     echo $post_id = wp_insert_post($new_post);
-//                     echo "  ";
-//                 }
-//             }
-
-//         } catch (Exception $e) {
-//             echo $e->getMessage();
-//         }
-//     }
-
-//     wp_die();
-// }
-
+// Hook for custom posts migration
+add_action('custom_posts_migration', 'posts_migration');
 
 function posts_migration()
 {
+
     global $wpdb;
     $table = $wpdb->prefix . 'sheet_to_wp_post';
-    $query = $wpdb->prepare("SELECT * FROM $table ORDER BY id DESC LIMIT 1");
+
+    // Execute the query directly without prepare
+    $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
     $row = $wpdb->get_row($query);
 
     if ($row) {
         try {
+
             require __DIR__ . '/vendor/autoload.php';
 
             // Set Google Client using database values
@@ -277,23 +137,22 @@ function posts_migration()
             $spreadsheetId = "$row->google_sheet_url";
             $range = 'A2:H';
             $rows = $sheets->spreadsheets_values->get($spreadsheetId, $range, ['majorDimension' => 'ROWS']);
+
             if (isset($rows['values'])) {
                 foreach ($rows['values'] as $row) {
 
-                    // if (empty($row[0])) {
-                    //     break;
-                    // }
-
+                    // Ensure the array key exists before accessing it
                     $data[] = [
-                        'col-a' => $row[0],
-                        'col-b' => $row[1],
-                        'col-c' => $row[2],
-                        'col-d' => $row[3],
-                        'col-e' => $row[4],
-                        'col-f' => $row[5],
-                        'col-g' => $row[6],
-                        'col-h' => $row[7],
+                        'col-a' => isset($row[0]) ? $row[0] : '',
+                        'col-b' => isset($row[1]) ? $row[1] : '',
+                        'col-c' => isset($row[2]) ? $row[2] : '',
+                        'col-d' => isset($row[3]) ? $row[3] : '',
+                        'col-e' => isset($row[4]) ? $row[4] : '',
+                        'col-f' => isset($row[5]) ? $row[5] : '',
+                        'col-g' => isset($row[6]) ? $row[6] : '',
+                        'col-h' => isset($row[7]) ? $row[7] : '',
                     ];
+
 
                     $currentRow++;
                 }
@@ -307,53 +166,13 @@ function posts_migration()
                 // if post title present -> col-a 
                 if (!empty($data['col-a'])) {
 
-                    // // if post tags not present
-                    // if($data['col-d']){
-                    //     $parts = explode(",", $data['col-d']);
-                    //     $arr = array();
-                    //     foreach ($parts as $tag) {
-                    //         if (tag_exists($tag)) {
-                    //             $tag = get_term_by('name', $tag, 'post_tag');
-                    //             if ($tag) {
-                    //                 $tag_id = $tag->term_id;
-                    //             }
-                    //             array_push($arr, $tag_id);
-                    //         } else {
-                    //             $tag = wp_insert_term(
-                    //                 $tag,  // The tag name
-                    //                 'post_tag'  // Taxonomy: 'post_tag' for WordPress tags
-                    //             );
-
-                    //             // Check for errors and get the tag ID
-                    //             if (!is_wp_error($tag)) {
-                    //                 $tag_id = $tag['term_id'];
-                    //                 array_push($arr, $tag_id);
-                    //             }
-                    //         }
-                    //     }
-
-                    //    try{
-                    //     $post_array = array(
-                    //         'ID' => $data['col-f'],
-                    //         'tags_input' => $arr,
-                    //     );
-                    //     wp_update_post($post_array);
-
-                    //     echo "tags update done";
-                    // }catch(Exception $e){
-                    //     echo $e->getMessage();
-                    //    }
-                    // }else{
-                    //     continue;
-                    // }
-
                     // col-f -> post_id 
                     if ($data['col-f']) {
-                        
+
                         $parts = explode(",", $data['col-c']);
                         $arr = array();
                         foreach ($parts as $cat) {
-                            if (category_exists($cat)) {
+                            if (term_exists($cat, 'category')) {
                                 array_push($arr, get_cat_ID($cat));
                             } else {
                                 $category = wp_insert_term(
@@ -372,7 +191,7 @@ function posts_migration()
                         $parts = explode(",", $data['col-d']);
                         $tags_arr = array();
                         foreach ($parts as $tag) {
-                            if (tag_exists($tag)) {
+                            if (term_exists($tag, 'post_tag')) {
                                 $tag = get_term_by('name', $tag, 'post_tag');
                                 if ($tag) {
                                     $tag_id = $tag->term_id;
@@ -392,19 +211,21 @@ function posts_migration()
                             }
                         }
 
-                        // updaing post fields by post id
-                        $post_array = array(
-                            'ID' => $data['col-f'],
-                            'post_title' => $data['col-a'],
-                            'post_content' => $data['col-b'],
-                            'post_category' => $arr,
-                            'tags_input' => $tags_arr,
-                        );
-                        wp_update_post($post_array);
+                        try {
+                            // updaing post fields by post id
+                            $post_array = array(
+                                'ID' => $data['col-f'],
+                                'post_title' => $data['col-a'],
+                                'post_content' => $data['col-b'],
+                                'post_category' => $arr,
+                                'tags_input' => $tags_arr,
+                            );
+                            wp_update_post($post_array);
 
-                        echo "update done";
-
-
+                            echo "UPDATE MIGRATION DONE";
+                        } catch (Exception $e) {
+                            echo $e->getMessage();
+                        }
 
                     } else {
                         /** IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST. **/
@@ -413,7 +234,7 @@ function posts_migration()
                         $parts = explode(",", $data['col-c']);
                         $arr = array();
                         foreach ($parts as $cat) {
-                            if (category_exists($cat)) {
+                            if (term_exists($cat, 'category')) {
                                 array_push($arr, get_cat_ID($cat));
                             } else {
                                 $category = wp_insert_term(
@@ -428,30 +249,36 @@ function posts_migration()
                                 }
                             }
                         }
-                        if ($arr == NULL) {
-                            $new_post = array(
-                                'post_title' => $data['col-a'],
-                                'post_content' => $data['col-b'],
-                                'post_status' => 'publish',
-                            );
 
-                            $post_id = wp_insert_post($new_post);
-                        } else {
-                            $new_post = array(
-                                'post_title' => $data['col-a'],
-                                'post_content' => $data['col-b'],
-                                'post_status' => 'publish',
-                                'post_category' => $arr,  // Category ID(s)
-                            );
 
-                            $post_id = wp_insert_post($new_post);
+                        try {
+                            if ($arr == NULL) {
+                                $new_post = array(
+                                    'post_title' => $data['col-a'],
+                                    'post_content' => $data['col-b'],
+                                    'post_status' => 'publish',
+                                );
+
+                                $post_id = wp_insert_post($new_post);
+                            } else {
+                                $new_post = array(
+                                    'post_title' => $data['col-a'],
+                                    'post_content' => $data['col-b'],
+                                    'post_status' => 'publish',
+                                    'post_category' => $arr,  // Category ID(s)
+                                );
+
+                                $post_id = wp_insert_post($new_post);
+                            }
+                        } catch (Exception $e) {
+                            echo $e->getMessage();
                         }
 
                         // managing tags for the post
                         $parts = explode(",", $data['col-d']);
                         $arr = array();
                         foreach ($parts as $tag) {
-                            if (tag_exists($tag)) {
+                            if (term_exists($tag, 'post_tag')) {
                                 $tag = get_term_by('name', $tag, 'post_tag');
                                 if ($tag) {
                                     $tag_id = $tag->term_id;
@@ -495,17 +322,10 @@ function posts_migration()
                                 $updateBody,
                                 ['valueInputOption' => 'USER_ENTERED']
                             );
-
                         } catch (Exception $e) {
                             echo $e->getMessage();
                         }
-
-
-                        // $currentRow++;
-
                     }
-
-
 
                 } else {
                     $post_id = 0;
@@ -530,15 +350,11 @@ function posts_migration()
                     } catch (Exception $e) {
                         echo $e->getMessage();
                     }
-
-                    // $currentRow++;
                 }
                 $currentRow++;
 
             }
-
-
-            echo "DONE";
+            echo "NEW POST CREATION MIGRATION DONE";
 
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -547,8 +363,5 @@ function posts_migration()
 
     wp_die();
 }
-
-
-include('trash-functions.php');
 
 ?>

@@ -20,11 +20,11 @@
 try{
     function my_custom_plugin_activate()
     {
-       require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
+    //    require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
     
        // getting database auth details
-       $path = $_SERVER['DOCUMENT_ROOT'];
-       include_once $path . '/wp-config.php';
+    //    $path = $_SERVER['DOCUMENT_ROOT'];
+    //    include_once $path . '/wp-config.php';
     
        global $wpdb;
        $host = $wpdb->dbhost;
@@ -105,7 +105,8 @@ function sheet_to_wp_migrate(){
     require (plugin_dir_path(__FILE__) . 'migrate.php');
 }
 
-// enqueue functin.php
+
+// include plugin functions 
 include('functions.php');
 
 
