@@ -26,7 +26,8 @@ try{
        $pass = $wpdb->dbpassword;
        $db = $wpdb->dbname;
     
-       $conn = mysqli_connect($host, $user, $pass, $db);
+       try{
+        $conn = mysqli_connect($host, $user, $pass, $db);
        // Code to execute on plugin activation
        global $wpdb;
        $table_name = $wpdb->prefix . 'sheet_to_wp_post';
@@ -60,6 +61,9 @@ try{
        MODIFY `id` bigint NOT NULL AUTO_INCREMENT;";
     
        mysqli_query($conn, $sql);
+       }catch(Exception $e){
+        echo $e->getMessage();
+       }
     
     }
    register_activation_hook(__FILE__, 'my_custom_plugin_activate');

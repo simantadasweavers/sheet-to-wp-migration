@@ -93,12 +93,16 @@ add_action('custom_posts_migration', 'posts_migration');
 function posts_migration()
 {
 
-    global $wpdb;
-    $table = $wpdb->prefix . 'sheet_to_wp_post';
+    try {
+        global $wpdb;
+        $table = $wpdb->prefix . 'sheet_to_wp_post';
 
-    // Execute the query directly without prepare
-    $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
-    $row = $wpdb->get_row($query);
+        // Execute the query directly without prepare
+        $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
+        $row = $wpdb->get_row($query);
+    } catch (Exception $e) {
+        echo $e->getMessage();
+    }
 
     if ($row) {
         try {

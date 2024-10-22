@@ -1,4 +1,13 @@
-<?php error_reporting(0); ?>
+<?php
+error_reporting(0);
+
+// Get all registered post types
+$args = array(
+  'public' => true, // Only public post types
+);
+$post_types = get_post_types($args, 'names');
+
+?>
 <!doctype html>
 <html lang="en">
 
@@ -16,7 +25,6 @@
   .status {
     display: inline;
     margin-right: 5px;
-    /* Optional: Add some space between the text and badge */
   }
 </style>
 
@@ -25,13 +33,6 @@
   <br>
   <br>
 
-  <?php 
-          $arr = get_post_types();
-          foreach ($arr as $arr) {
-            echo $arr['post'];
-            echo "<br/>";
-          }
-          ?>  
 
   <div class="row">
     <div class="col-2"></div>
@@ -46,7 +47,7 @@
           <input class="form-control" type="file" name="formFile" id="formFile" accept="application/json" required>
         </div>
         <div class="mb-3">
-        <label for="cron-time" class="form-label">CRON Job Time</label>
+          <label for="cron-time" class="form-label">CRON Job Time</label>
           <select class="form-select" id="cron-time" aria-label="Default select example">
             <option value="5" selected>5 Mintes</option>
             <option value="7">7 Mintes</option>
@@ -57,11 +58,14 @@
           </select>
         </div>
         <div class="mb-3">
-        
-        <label for="post-type" class="form-label">Post Type</label>
+
+          <label for="post-type" class="form-label">Post Type</label>
           <select class="form-select" id="post-type" aria-label="Default select example">
-          
-          <option value="7">7 Mintes</option>
+            <?php
+            foreach ($post_types as $post_type) {
+              ?>
+              <option value="<?php echo $post_type; ?>"><?php echo $post_type; ?></option>
+            <?php } ?>
           </select>
         </div>
         <button type="submit" id="submit-btn" class="btn btn-primary">Submit</button>
