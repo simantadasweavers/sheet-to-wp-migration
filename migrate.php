@@ -10,6 +10,8 @@
 </head>
 <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
     crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
 <body>
     <br>
@@ -39,7 +41,21 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        console.warn(response);
+                        console.log(response);
+                        if(response.success){
+                            Swal.fire({
+                            icon: "success",
+                            title: "Awesome!",
+                            text: response.data,
+                        });
+                        }else{
+                            Swal.fire({
+                            icon: "error",
+                            title: "Oops...",
+                            text: "Migration Task Not Schedulled. Set the Auth Settings!",
+                        });
+                        }
+                    
                     },
                     error: function (response) {
                         console.error(response);
@@ -51,7 +67,7 @@
     </script>
 
 
- 
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"

@@ -48,6 +48,11 @@ try{
           `universe_domain` varchar(120) NULL,
           `cron_job_time` varchar(4) NULL,
           `post_type` varchar(10) NULL,
+          `gsheet_post_id` varchar(10) NULL,
+          `gsheet_post_title` varchar(10) NULL,
+          `gsheet_post_content` varchar(10) NULL,
+          `gsheet_post_category` varchar(10) NULL,
+          `gsheet_post_tags` varchar(10) NULL,
           `created_at` varchar(200) NULL
         );
         ";
@@ -79,11 +84,20 @@ function sheet_to_wp_migration_options_page()
     add_menu_page( 'Sheet to WP', 'Sheet to WP', 'edit', $plugin_slug, null, 'dashicons-nametag', '58',);
     add_submenu_page(
         $plugin_slug,
-        'Settings',
-        'Settings',
+        'Auth Settings',
+        'Auth Settings',
         'manage_options',
         'sheet_to_wp_settings',
         'sheet_to_wp_settings'
+    );
+
+    add_submenu_page(
+        $plugin_slug,
+        'Sheet Settings',
+        'Sheet Settings',
+        'manage_options',
+        'sheet_settings',
+        'sheet_settings'
     );
 
     add_submenu_page(
@@ -103,6 +117,10 @@ function sheet_to_wp_settings(){
 }
 function sheet_to_wp_migrate(){
     require (plugin_dir_path(__FILE__) . 'migrate.php');
+}
+
+function sheet_settings(){
+    require(plugin_dir_path(__FILE__) . 'sheet_settings.php');
 }
 
 

@@ -22,6 +22,47 @@ function save_settings()
     $auth_provider_x509_cert_url = esc_url_raw($_POST['auth_provider_x509_cert_url']);
     $client_x509_cert_url = esc_url_raw($_POST['client_x509_cert_url']);
     $universe_domain = sanitize_text_field($_POST['universe_domain']);
+    $cron_time = sanitize_text_field($_POST['cron_time']);
+    $post_type = sanitize_text_field($_POST['post_type']);
+
+    /**** checking google sheet connection ****/
+    try {
+        require __DIR__ . '/vendor/autoload.php';
+        // Set Google Client using database values
+        $client = new \Google_Client();
+        $client->setApplicationName('My PHP App');
+        $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
+        $client->setAccessType('offline');
+
+        $client->setAuthConfig([
+            "type" => $account_type,
+            "project_id" => $project_id,
+            "private_key_id" => $private_key_id,
+            "private_key" => $private_key,
+            "client_email" => $client_email,
+            "client_id" => $client_id,
+            "auth_uri" => $auth_uri,
+            "token_uri" => $token_uri,
+            "auth_provider_x509_cert_url" => $auth_provider_x509_cert_url,
+            "client_x509_cert_url" => $client_x509_cert_url,
+            "universe_domain" => $universe_domain
+        ]);
+
+
+        $sheets = new \Google_Service_Sheets($client);
+
+        // Fetch all posts from the sheet
+        $data = [];
+        $currentRow = 2;
+
+        $spreadsheetId = $google_sheet_url;
+        $range = 'A2:H';
+        $rows = $sheets->spreadsheets_values->get($spreadsheetId, $range, ['majorDimension' => 'ROWS']);
+
+    } catch (Exception $e) {
+        wp_send_json_error();
+        wp_die();
+    }
 
     // Prepare the data for insertion
     $data = array(
@@ -37,6 +78,8 @@ function save_settings()
         'auth_provider_x509_cert_url' => $auth_provider_x509_cert_url,
         'client_x509_cert_url' => $client_x509_cert_url,
         'universe_domain' => $universe_domain,
+        'cron_job_time' => $cron_time,
+        'post_type' => $post_type,
         'created_at' => date('d-m-Y H:i:s')
     );
 
@@ -59,11 +102,29 @@ function save_settings()
 // Add custom cron schedule interval
 function addCronIntervals($schedules)
 {
-    $schedules['sixty_seconds'] = array(
-        'interval' => 70,
-        'display' => __('Every 70 Seconds'),
-    );
-    return $schedules;
+    try {
+        global $wpdb;
+        $table = $wpdb->prefix . 'sheet_to_wp_post';
+
+        // Execute the query directly without prepare
+        $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
+        $row = $wpdb->get_row($query);
+
+        if ($wpdb->num_rows > 0) {
+            if ($row->cron_job_time) {
+                $time = ($row->cron_job_time) * 60;
+            }
+            $schedules['custom_cron_job_timing'] = array(
+                'interval' => $time,
+                'display' => __("Every $time Seconds"),
+            );
+            return $schedules;
+        }
+    } catch (Exception $e) {
+        wp_send_json_error();
+         wp_die();
+    }
+
 }
 add_filter('cron_schedules', 'addCronIntervals');
 
@@ -72,10 +133,27 @@ add_action('wp_ajax_posts_migration', 'handle_posts_migration');
 
 function handle_posts_migration()
 {
+    try {
+        global $wpdb;
+        $table = $wpdb->prefix . 'sheet_to_wp_post';
+
+        // Execute the query directly without prepare
+        $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
+        $row = $wpdb->get_row($query);
+        if ($row) {
+            if (!$row->cron_job_time) {
+                wp_send_json_error();
+                wp_die();
+            }
+        }
+    } catch (Exception $e) {
+        echo $e->getMessage();
+    }
+
     if (isset($_POST['schedule_migration'])) {
         // Check if the cron job is already scheduled
         if (!wp_next_scheduled('custom_posts_migration')) {
-            wp_schedule_event(time(), 'sixty_seconds', 'custom_posts_migration'); // Correct action name
+            wp_schedule_event(time(), 'custom_cron_job_timing', 'custom_posts_migration'); // Correct action name
             wp_send_json_success("Cron job scheduled.");
         } else {
             wp_send_json_error("Cron job already scheduled.");
@@ -83,6 +161,7 @@ function handle_posts_migration()
     } else {
         wp_send_json_error("Migration cron job not scheduled.");
     }
+
 
     wp_die(); // Properly end AJAX request
 }
@@ -100,6 +179,7 @@ function posts_migration()
         // Execute the query directly without prepare
         $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
         $row = $wpdb->get_row($query);
+        $post_type = $row->post_type;
     } catch (Exception $e) {
         echo $e->getMessage();
     }
@@ -154,12 +234,11 @@ function posts_migration()
                         'col-h' => isset($row[7]) ? $row[7] : '',
                     ];
 
-
                     $currentRow++;
                 }
             }
 
-            // // Process each row and insert/update posts
+            // Process each row and insert/update posts
             $currentRow = 2; // Reset currentRow counter for sheet update
 
             foreach ($data as $data) {
@@ -258,6 +337,7 @@ function posts_migration()
                                     'post_title' => $data['col-a'],
                                     'post_content' => $data['col-b'],
                                     'post_status' => 'publish',
+                                    'post_type' => $post_type,
                                 );
 
                                 $post_id = wp_insert_post($new_post);
@@ -267,6 +347,7 @@ function posts_migration()
                                     'post_content' => $data['col-b'],
                                     'post_status' => 'publish',
                                     'post_category' => $arr,  // Category ID(s)
+                                    'post_type' => $post_type,
                                 );
 
                                 $post_id = wp_insert_post($new_post);
@@ -298,7 +379,6 @@ function posts_migration()
                                 }
                             }
                         }
-
                         if ($arr != NULL) {
                             $post_array = array(
                                 'ID' => $post_id,
@@ -306,6 +386,7 @@ function posts_migration()
                             );
                             wp_update_post($post_array);
                         }
+                        // end managing of tags for post type
 
                         try {
                             // Update Google Sheet column F with the post ID only if it is empty
@@ -353,9 +434,7 @@ function posts_migration()
                     }
                 }
                 $currentRow++;
-
             }
-            echo "NEW POST CREATION MIGRATION DONE";
 
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -364,5 +443,45 @@ function posts_migration()
 
     wp_die();
 }
+
+
+add_action('wp_ajax_submit_google_sheet_form', 'handle_google_sheet_form');
+add_action('wp_ajax_nopriv_submit_google_sheet_form', 'handle_google_sheet_form'); // For non-logged in users
+
+function handle_google_sheet_form()
+{
+
+    // Sanitize and retrieve form data
+    $postid = sanitize_text_field($_POST['postid']);
+    $posttitle = sanitize_text_field($_POST['posttitle']);
+    $postcontent = sanitize_text_field($_POST['postcontent']);
+    $postcategory = sanitize_text_field($_POST['postcategory']);
+    $posttags = sanitize_text_field($_POST['posttags']);
+
+    // Insert data into the database
+    $data = [];
+    $data = array(
+        'gsheet_post_title' => $posttitle,
+        'gsheet_post_content' => $postcontent,
+        'gsheet_post_category' => $postcategory,
+        'gsheet_post_tags' => $posttags,
+        'gsheet_post_id' => $postid,
+    );
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'sheet_to_wp_post';
+    $result = $wpdb->insert($table_name, $data);
+
+    // Check if the insertion was successful
+    if ($result !== false) {
+        wp_send_json_success('Data saved successfully.');
+    } else {
+        wp_send_json_error('Failed to save data.');
+    }
+
+    wp_die(); // Terminate and return a proper response
+
+}
+
+
 
 ?>

@@ -1,11 +1,23 @@
 <?php
 error_reporting(0);
 
-// Get all registered post types
+// // Get all registered post types
+// $args = array(
+//   'public' => true, // Only public post types
+// );
+// $post_types = get_post_types($args, 'names');
+
+
+// Get all custom post types
 $args = array(
-  'public' => true, // Only public post types
+  'public' => true,
+  '_builtin' => false,  // Exclude built-in post types (like page)
 );
-$post_types = get_post_types($args, 'names');
+
+$custom_post_types = get_post_types($args, 'names');
+
+// Add the 'post' type to the array
+$post_types = array_merge(array('post'), $custom_post_types);
 
 ?>
 <!doctype html>
@@ -58,7 +70,6 @@ $post_types = get_post_types($args, 'names');
           </select>
         </div>
         <div class="mb-3">
-
           <label for="post-type" class="form-label">Post Type</label>
           <select class="form-select" id="post-type" aria-label="Default select example">
             <?php
@@ -108,6 +119,10 @@ $post_types = get_post_types($args, 'names');
             try {
               const jsonData = JSON.parse(e.target.result);
               let url = document.getElementById('sheet_url').value;
+              const cronTime = document.getElementById('cron-time').value;
+              const postType = document.getElementById('post-type').value;
+
+
               // Create FormData object and append data
               let formData = new FormData();
               formData.append('sheet_url', extractSheetId(url));
@@ -122,6 +137,8 @@ $post_types = get_post_types($args, 'names');
               formData.append('auth_provider_x509_cert_url', jsonData.auth_provider_x509_cert_url);
               formData.append('client_x509_cert_url', jsonData.client_x509_cert_url);
               formData.append('universe_domain', jsonData.universe_domain);
+              formData.append('cron_time', cronTime); // Append CRON job time
+              formData.append('post_type', postType); // Append post type
               formData.append('action', 'save_settings'); // Add action for AJAX
 
               // Now, make the AJAX request
@@ -132,7 +149,6 @@ $post_types = get_post_types($args, 'names');
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                  console.warn(response);
                   if (response.success) {
                     alert("Settings saved successfully!");
                     <?php
@@ -143,17 +159,17 @@ $post_types = get_post_types($args, 'names');
                     location.reload();
 
                   } else {
-                    alert("Failed to save settings: " + response.data);
+                    alert("Error in Google Spreadsheet ID or Auth.json file");
+
                   }
                 },
-                error: function () {
-                  alert("Error during AJAX request!");
+                error: function (response) {
+                  alert(response.data);
                 }
               });
 
             } catch (err) {
-              console.error("Invalid JSON file", err);
-              alert("Invalid JSON file. Please check the format.");
+              console.error(err);
             }
           };
 
