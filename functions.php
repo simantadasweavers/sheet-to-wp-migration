@@ -110,6 +110,13 @@ function addCronIntervals($schedules)
         $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
         $row = $wpdb->get_row($query);
 
+        // $time = ($row->cron_job_time) * 60;
+        // $schedules['custom_cron_job_timing'] = array(
+        //     'interval' => $time,
+        //     'display' => __("Every $time Seconds"),
+        // );
+        // return $schedules;
+
         if ($wpdb->num_rows > 0) {
             if ($row->cron_job_time) {
                 $time = ($row->cron_job_time) * 60;
@@ -122,7 +129,7 @@ function addCronIntervals($schedules)
         }
     } catch (Exception $e) {
         wp_send_json_error();
-         wp_die();
+        wp_die();
     }
 
 }
@@ -223,6 +230,14 @@ function posts_migration()
                 foreach ($rows['values'] as $row) {
 
                     // Ensure the array key exists before accessing it
+                    /** 
+                     * ARRAY MAP
+                     * col-a -> POST TITLE
+                     * col-b -> POST CONTENT
+                     * col-c -> POST CATEGORY
+                     * col-d -> POST TAGS
+                     * col-e -> POST ID
+                     */
                     $data[] = [
                         'col-a' => isset($row[0]) ? $row[0] : '',
                         'col-b' => isset($row[1]) ? $row[1] : '',
@@ -233,6 +248,15 @@ function posts_migration()
                         'col-g' => isset($row[6]) ? $row[6] : '',
                         'col-h' => isset($row[7]) ? $row[7] : '',
                     ];
+
+
+                    // $data[] = [
+                    //     'col-a' => $row->gsheet_post_title,
+                    //     'col-b' => $row->gsheet_post_content,
+                    //     'col-c' => $row->gsheet_post_category,
+                    //     'col-d' => $row->gsheet_post_tags,
+                    //     'col-e' => $row->gsheet_post_id,
+                    // ];
 
                     $currentRow++;
                 }
@@ -246,18 +270,18 @@ function posts_migration()
                 // if post title present -> col-a 
                 if (!empty($data['col-a'])) {
 
-                    // col-f -> post_id 
-                    if ($data['col-f']) {
+                    // col-e -> post_id 
+                    if ($data['col-e']) {
 
                         $parts = explode(",", $data['col-c']);
                         $arr = array();
                         foreach ($parts as $cat) {
-                            if (term_exists($cat, 'category')) {
+                            if (term_exists($cat, $row->gsheet_post_category ? $row->gsheet_post_category : 'category')) {
                                 array_push($arr, get_cat_ID($cat));
                             } else {
                                 $category = wp_insert_term(
                                     $cat,  // The category name
-                                    'category'      // Taxonomy: 'category' for WordPress categories
+                                    $row->gsheet_post_category ? $row->gsheet_post_category : 'category'  // Taxonomy: 'category' for WordPress categories
                                 );
 
                                 // Check for errors and get the category ID
@@ -294,7 +318,7 @@ function posts_migration()
                         try {
                             // updaing post fields by post id
                             $post_array = array(
-                                'ID' => $data['col-f'],
+                                'ID' => $data['col-e'],
                                 'post_title' => $data['col-a'],
                                 'post_content' => $data['col-b'],
                                 'post_category' => $arr,
@@ -389,15 +413,15 @@ function posts_migration()
                         // end managing of tags for post type
 
                         try {
-                            // Update Google Sheet column F with the post ID only if it is empty
-                            $updateRange = 'F' . $currentRow;
+                            // Update Google Sheet column E with the post ID only if it is empty
+                            $updateRange = 'E' . $currentRow;
                             $updateBody = new \Google_Service_Sheets_ValueRange([
                                 'range' => $updateRange,
                                 'majorDimension' => 'ROWS',
                                 'values' => [[$post_id]], // This is where you insert the post ID
                             ]);
 
-                            // Update the sheet only if col-f (post ID) is empty
+                            // Update the sheet only if col-e (post ID) is empty
                             $sheets->spreadsheets_values->update(
                                 $spreadsheetId,
                                 $updateRange,
@@ -413,15 +437,15 @@ function posts_migration()
                     $post_id = 0;
 
                     try {
-                        // Update Google Sheet column F with the post ID only if it is empty
-                        $updateRange = 'F' . $currentRow;
+                        // Update Google Sheet column E with the post ID only if it is empty
+                        $updateRange = 'E' . $currentRow;
                         $updateBody = new \Google_Service_Sheets_ValueRange([
                             'range' => $updateRange,
                             'majorDimension' => 'ROWS',
                             'values' => [[$post_id]], // This is where you insert the post ID
                         ]);
 
-                        // Update the sheet only if col-f (post ID) is empty
+                        // Update the sheet only if col-e (post ID) is empty
                         $sheets->spreadsheets_values->update(
                             $spreadsheetId,
                             $updateRange,
@@ -452,24 +476,30 @@ function handle_google_sheet_form()
 {
 
     // Sanitize and retrieve form data
+    $recordid = sanitize_text_field($_POST['recordid']);
     $postid = sanitize_text_field($_POST['postid']);
     $posttitle = sanitize_text_field($_POST['posttitle']);
     $postcontent = sanitize_text_field($_POST['postcontent']);
     $postcategory = sanitize_text_field($_POST['postcategory']);
     $posttags = sanitize_text_field($_POST['posttags']);
 
-    // Insert data into the database
-    $data = [];
+
+    // Prepare the data to be updated
     $data = array(
+        'gsheet_post_id' => $postid,
         'gsheet_post_title' => $posttitle,
         'gsheet_post_content' => $postcontent,
         'gsheet_post_category' => $postcategory,
         'gsheet_post_tags' => $posttags,
-        'gsheet_post_id' => $postid,
     );
+
+    // Where clause to specify which record to update
+    $where = array('id' => $recordid);
+
+    // Update the record
     global $wpdb;
     $table_name = $wpdb->prefix . 'sheet_to_wp_post';
-    $result = $wpdb->insert($table_name, $data);
+    $result = $wpdb->update($table_name, $data, $where);
 
     // Check if the insertion was successful
     if ($result !== false) {

@@ -1,13 +1,6 @@
 <?php
 error_reporting(0);
 
-// // Get all registered post types
-// $args = array(
-//   'public' => true, // Only public post types
-// );
-// $post_types = get_post_types($args, 'names');
-
-
 // Get all custom post types
 $args = array(
   'public' => true,

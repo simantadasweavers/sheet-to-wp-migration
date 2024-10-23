@@ -22,6 +22,51 @@
         </div>
     </div>
 
+    <br>
+    <br>
+
+
+    <?php
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'sheet_to_wp_post';
+
+    // Fetch the last record from the table
+    $last_record = $wpdb->get_row("SELECT * FROM $table_name ORDER BY id DESC LIMIT 1");
+    ?>
+
+    <div class="row">
+        <div class="col-2"></div>
+        <div class="col-8">
+
+            <p class="text-center fs-5">Review Google Sheet Settings Before Migration</p>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">SHEET ID</th>
+                        <th scope="col">POST TYPE</th>
+                        <th scope="col">CATEGORY</th>
+                        <th scope="col">TAGS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($last_record): ?>
+                        <tr>
+                            <td><?php echo $last_record->google_sheet_url; ?></td>
+                            <td><?php echo $last_record->post_type; ?></td>
+                            <td><?php echo $last_record->gsheet_post_category; ?></td>
+                            <td><?php echo $last_record->gsheet_post_tags; ?></td>
+                        </tr>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4">No data available</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+
+        </div>
+        <div class="col-2"></div>
+    </div>
 
     <script>
         var ajaxurl = "<?php echo admin_url('admin-ajax.php'); ?>";
@@ -42,20 +87,20 @@
                     contentType: false,
                     success: function (response) {
                         console.log(response);
-                        if(response.success){
+                        if (response.success) {
                             Swal.fire({
-                            icon: "success",
-                            title: "Awesome!",
-                            text: response.data,
-                        });
-                        }else{
+                                icon: "success",
+                                title: "Awesome!",
+                                text: response.data,
+                            });
+                        } else {
                             Swal.fire({
-                            icon: "error",
-                            title: "Oops...",
-                            text: "Migration Task Not Schedulled. Set the Auth Settings!",
-                        });
+                                icon: "error",
+                                title: "Oops...",
+                                text: "Migration Task Not Schedulled. Set the Auth Settings!",
+                            });
                         }
-                    
+
                     },
                     error: function (response) {
                         console.error(response);

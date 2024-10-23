@@ -2,6 +2,16 @@
 change google_sheet_url to sheet_id in production apps. 
 set parent category , child category for posts
 
+
+                    /** 
+                     * ARRAY MAP
+                     * col-a -> POST TITLE
+                     * col-b -> POST CONTENT
+                     * col-c -> POST CATEGORY
+                     * col-d -> POST TAGS
+                     * col-e -> POST ID
+                     */
+
 ====================================================================================
 
 DUE WORK ==> 17 oct 2024.
@@ -48,6 +58,19 @@ IMPROVEMENT =>
 ===================================================================================
 DUE WORK => 22 oct 2024 
 
-2. SET CRON TIME BY SELECT BOX - 2 , 4 , 6, 8, 10, 20, 30 = done
-3. SELECT POST TYPE -> custom post type, default -> post, page
-4. LIST ALL CRONS AND DELETE OPTIONS 
+1. SET CRON TIME BY SELECT BOX - 2 , 4 , 6, 8, 10, 20, 30 = done
+2. SELECT POST TYPE -> custom post type, default -> post, page
+====================================================================================
+DUE WORK => 
+
+1. LIST ALL CRONS AND DELETE OPTIONS 
+
+** PROBLEMS => 
+SELECT COLUMN INDIVISUALLY FOR SPECIFIC ROLE , means 
+-> assuming my self first column for POST TITLE
+-> assuming second column for POST CONTENT
+-> third column for POST CATEGORY
+note: we can't change the ordering by ourselves. 
+
+** We should need to maintain the order => 
+POST TITLE, CONTENT, CATEGORY, TAGS, POSTID
