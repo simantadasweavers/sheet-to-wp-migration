@@ -45,22 +45,11 @@
                         <th scope="col">SHEET ID</th>
                         <th scope="col">POST TYPE</th>
                         <th scope="col">CATEGORY</th>
-                        <th scope="col">TAGS</th>
+                        <th scope="col">TAG</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($last_record): ?>
-                        <tr>
-                            <td><?php echo $last_record->google_sheet_url; ?></td>
-                            <td><?php echo $last_record->post_type; ?></td>
-                            <td><?php echo $last_record->gsheet_post_category; ?></td>
-                            <td><?php echo $last_record->gsheet_post_tags; ?></td>
-                        </tr>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="4">No data available</td>
-                        </tr>
-                    <?php endif; ?>
+                    
                 </tbody>
             </table>
 

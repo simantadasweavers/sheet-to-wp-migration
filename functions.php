@@ -24,6 +24,8 @@ function save_settings()
     $universe_domain = sanitize_text_field($_POST['universe_domain']);
     $cron_time = sanitize_text_field($_POST['cron_time']);
     $post_type = sanitize_text_field($_POST['post_type']);
+    $post_category = sanitize_text_field($_POST['category']);
+    $post_tag_name = sanitize_text_field($_POST['tag_name']);
 
     /**** checking google sheet connection ****/
     try {
@@ -80,6 +82,8 @@ function save_settings()
         'universe_domain' => $universe_domain,
         'cron_job_time' => $cron_time,
         'post_type' => $post_type,
+        'post_category' => $post_category,
+        'post_tag' => $post_tag_name,
         'created_at' => date('d-m-Y H:i:s')
     );
 
@@ -109,13 +113,6 @@ function addCronIntervals($schedules)
         // Execute the query directly without prepare
         $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
         $row = $wpdb->get_row($query);
-
-        // $time = ($row->cron_job_time) * 60;
-        // $schedules['custom_cron_job_timing'] = array(
-        //     'interval' => $time,
-        //     'display' => __("Every $time Seconds"),
-        // );
-        // return $schedules;
 
         if ($wpdb->num_rows > 0) {
             if ($row->cron_job_time) {
@@ -173,6 +170,8 @@ function handle_posts_migration()
     wp_die(); // Properly end AJAX request
 }
 
+
+
 // Hook for custom posts migration
 add_action('custom_posts_migration', 'posts_migration');
 
@@ -185,13 +184,13 @@ function posts_migration()
 
         // Execute the query directly without prepare
         $query = "SELECT * FROM $table ORDER BY id DESC LIMIT 1";
-        $row = $wpdb->get_row($query);
-        $post_type = $row->post_type;
+        $db_row = $wpdb->get_row($query);
+        $post_type = $db_row->post_type;
     } catch (Exception $e) {
         echo $e->getMessage();
     }
 
-    if ($row) {
+    if ($db_row) {
         try {
 
             require __DIR__ . '/vendor/autoload.php';
@@ -203,17 +202,17 @@ function posts_migration()
             $client->setAccessType('offline');
 
             $client->setAuthConfig([
-                "type" => $row->account_type,
-                "project_id" => $row->project_id,
-                "private_key_id" => $row->private_key_id,
-                "private_key" => $row->private_key,
-                "client_email" => $row->client_email,
-                "client_id" => $row->client_id,
-                "auth_uri" => $row->auth_uri,
-                "token_uri" => $row->token_uri,
-                "auth_provider_x509_cert_url" => $row->auth_provider_x509_cert_url,
-                "client_x509_cert_url" => $row->client_x509_cert_url,
-                "universe_domain" => $row->universe_domain
+                "type" => $db_row->account_type,
+                "project_id" => $db_row->project_id,
+                "private_key_id" => $db_row->private_key_id,
+                "private_key" => $db_row->private_key,
+                "client_email" => $db_row->client_email,
+                "client_id" => $db_row->client_id,
+                "auth_uri" => $db_row->auth_uri,
+                "token_uri" => $db_row->token_uri,
+                "auth_provider_x509_cert_url" => $db_row->auth_provider_x509_cert_url,
+                "client_x509_cert_url" => $db_row->client_x509_cert_url,
+                "universe_domain" => $db_row->universe_domain
             ]);
 
             $sheets = new \Google_Service_Sheets($client);
@@ -222,7 +221,7 @@ function posts_migration()
             $data = [];
             $currentRow = 2;
 
-            $spreadsheetId = "$row->google_sheet_url";
+            $spreadsheetId = "$db_row->google_sheet_url";
             $range = 'A2:H';
             $rows = $sheets->spreadsheets_values->get($spreadsheetId, $range, ['majorDimension' => 'ROWS']);
 
@@ -249,15 +248,6 @@ function posts_migration()
                         'col-h' => isset($row[7]) ? $row[7] : '',
                     ];
 
-
-                    // $data[] = [
-                    //     'col-a' => $row->gsheet_post_title,
-                    //     'col-b' => $row->gsheet_post_content,
-                    //     'col-c' => $row->gsheet_post_category,
-                    //     'col-d' => $row->gsheet_post_tags,
-                    //     'col-e' => $row->gsheet_post_id,
-                    // ];
-
                     $currentRow++;
                 }
             }
@@ -273,47 +263,53 @@ function posts_migration()
                     // col-e -> post_id 
                     if ($data['col-e']) {
 
-                        $parts = explode(",", $data['col-c']);
-                        $arr = array();
-                        foreach ($parts as $cat) {
-                            if (term_exists($cat, $row->gsheet_post_category ? $row->gsheet_post_category : 'category')) {
-                                array_push($arr, get_cat_ID($cat));
-                            } else {
-                                $category = wp_insert_term(
-                                    $cat,  // The category name
-                                    $row->gsheet_post_category ? $row->gsheet_post_category : 'category'  // Taxonomy: 'category' for WordPress categories
-                                );
+                        if ($db_row->post_category) {
+                            $parts = explode(",", $data['col-c']);
+                            $arr = array();
+                            foreach ($parts as $cat) {
+                                if (term_exists($cat, $db_row->post_category)) {
+                                    array_push($arr, get_cat_ID($cat));
+                                } else {
+                                    $category = wp_insert_term(
+                                        $cat,  // The category name
+                                        $db_row->post_category  // Taxonomy for wordpress
+                                    );
 
-                                // Check for errors and get the category ID
-                                if (!is_wp_error($category)) {
-                                    $catid = $category['term_id'];
-                                    array_push($arr, $catid);
+                                    // Check for errors and get the category ID
+                                    if (!is_wp_error($category)) {
+                                        $catid = $category['term_id'];
+                                        array_push($arr, $catid);
+                                    }
                                 }
                             }
                         }
 
-                        $parts = explode(",", $data['col-d']);
-                        $tags_arr = array();
-                        foreach ($parts as $tag) {
-                            if (term_exists($tag, 'post_tag')) {
-                                $tag = get_term_by('name', $tag, 'post_tag');
-                                if ($tag) {
-                                    $tag_id = $tag->term_id;
-                                }
-                                array_push($tags_arr, $tag_id);
-                            } else {
-                                $tag = wp_insert_term(
-                                    $tag,  // The tag name
-                                    'post_tag'  // Taxonomy: 'post_tag' for WordPress tags
-                                );
 
-                                // Check for errors and get the tag ID
-                                if (!is_wp_error($tag)) {
-                                    $tag_id = $tag['term_id'];
+                        if ($db_row->post_tag) {
+                            $parts = explode(",", $data['col-d']);
+                            $tags_arr = array();
+                            foreach ($parts as $tag) {
+                                if (term_exists($tag, $db_row->post_tag)) {
+                                    $tag = get_term_by('name', $tag, $db_row->post_tag);
+                                    if ($tag) {
+                                        $tag_id = $tag->term_id;
+                                    }
                                     array_push($tags_arr, $tag_id);
+                                } else {
+                                    $tag = wp_insert_term(
+                                        $tag,  // The tag name
+                                        $db_row->post_tag // Taxonomy: 'post_tag' for WordPress tags
+                                    );
+
+                                    // Check for errors and get the tag ID
+                                    if (!is_wp_error($tag)) {
+                                        $tag_id = $tag['term_id'];
+                                        array_push($tags_arr, $tag_id);
+                                    }
                                 }
                             }
                         }
+
 
                         try {
                             // updaing post fields by post id
@@ -326,7 +322,6 @@ function posts_migration()
                             );
                             wp_update_post($post_array);
 
-                            echo "UPDATE MIGRATION DONE";
                         } catch (Exception $e) {
                             echo $e->getMessage();
                         }
@@ -334,22 +329,24 @@ function posts_migration()
                     } else {
                         /** IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST. **/
 
-                        // managing categories
-                        $parts = explode(",", $data['col-c']);
-                        $arr = array();
-                        foreach ($parts as $cat) {
-                            if (term_exists($cat, 'category')) {
-                                array_push($arr, get_cat_ID($cat));
-                            } else {
-                                $category = wp_insert_term(
-                                    $cat,  // The category name
-                                    'category'      // Taxonomy: 'category' for WordPress categories
-                                );
+                        if ($db_row->post_category) {
+                            // managing categories
+                            $parts = explode(",", $data['col-c']);
+                            $arr = array();
+                            foreach ($parts as $cat) {
+                                if (term_exists($cat, $db_row->post_category)) {
+                                    array_push($arr, get_cat_ID($cat));
+                                } else {
+                                    $category = wp_insert_term(
+                                        $cat,  // The category name
+                                        $db_row->post_category
+                                    );
 
-                                // Check for errors and get the category ID
-                                if (!is_wp_error($category)) {
-                                    $catid = $category['term_id'];
-                                    array_push($arr, $catid);
+                                    // Check for errors and get the category ID
+                                    if (!is_wp_error($category)) {
+                                        $catid = $category['term_id'];
+                                        array_push($arr, $catid);
+                                    }
                                 }
                             }
                         }
@@ -380,29 +377,34 @@ function posts_migration()
                             echo $e->getMessage();
                         }
 
-                        // managing tags for the post
-                        $parts = explode(",", $data['col-d']);
-                        $arr = array();
-                        foreach ($parts as $tag) {
-                            if (term_exists($tag, 'post_tag')) {
-                                $tag = get_term_by('name', $tag, 'post_tag');
-                                if ($tag) {
-                                    $tag_id = $tag->term_id;
-                                }
-                                array_push($arr, $tag_id);
-                            } else {
-                                $tag = wp_insert_term(
-                                    $tag,  // The tag name
-                                    'post_tag'  // Taxonomy: 'post_tag' for WordPress tags
-                                );
 
-                                // Check for errors and get the tag ID
-                                if (!is_wp_error($tag)) {
-                                    $tag_id = $tag['term_id'];
+                        if ($db_row->post_tag) {
+                            // managing tags for the post
+                            $parts = explode(",", $data['col-d']);
+                            $arr = array();
+                            foreach ($parts as $tag) {
+                                if (term_exists($tag, $db_row->post_tag)) {
+                                    $tag = get_term_by('name', $tag, $db_row->post_tag);
+                                    if ($tag) {
+                                        $tag_id = $tag->term_id;
+                                    }
                                     array_push($arr, $tag_id);
+                                } else {
+                                    $tag = wp_insert_term(
+                                        $tag,  // The tag name
+                                        $db_row->post_tag  // Taxonomy: 'post_tag' for WordPress tags
+                                    );
+
+                                    // Check for errors and get the tag ID
+                                    if (!is_wp_error($tag)) {
+                                        $tag_id = $tag['term_id'];
+                                        array_push($arr, $tag_id);
+                                    }
                                 }
                             }
                         }
+
+
                         if ($arr != NULL) {
                             $post_array = array(
                                 'ID' => $post_id,
@@ -469,49 +471,23 @@ function posts_migration()
 }
 
 
-add_action('wp_ajax_submit_google_sheet_form', 'handle_google_sheet_form');
-add_action('wp_ajax_nopriv_submit_google_sheet_form', 'handle_google_sheet_form'); // For non-logged in users
 
-function handle_google_sheet_form()
+add_action('wp_ajax_fetch_taxonomoes', 'fetch_taxonomoes');
+function fetch_taxonomoes()
 {
+    $post_type = sanitize_text_field($_POST['post_type']);
 
-    // Sanitize and retrieve form data
-    $recordid = sanitize_text_field($_POST['recordid']);
-    $postid = sanitize_text_field($_POST['postid']);
-    $posttitle = sanitize_text_field($_POST['posttitle']);
-    $postcontent = sanitize_text_field($_POST['postcontent']);
-    $postcategory = sanitize_text_field($_POST['postcategory']);
-    $posttags = sanitize_text_field($_POST['posttags']);
-
-
-    // Prepare the data to be updated
-    $data = array(
-        'gsheet_post_id' => $postid,
-        'gsheet_post_title' => $posttitle,
-        'gsheet_post_content' => $postcontent,
-        'gsheet_post_category' => $postcategory,
-        'gsheet_post_tags' => $posttags,
-    );
-
-    // Where clause to specify which record to update
-    $where = array('id' => $recordid);
-
-    // Update the record
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'sheet_to_wp_post';
-    $result = $wpdb->update($table_name, $data, $where);
-
-    // Check if the insertion was successful
-    if ($result !== false) {
-        wp_send_json_success('Data saved successfully.');
-    } else {
-        wp_send_json_error('Failed to save data.');
+    $return_arr = array();
+    $arr = get_object_taxonomies($post_type);
+    foreach ($arr as $arr) {
+        $taxonomy = get_taxonomy($arr);
+        array_push($return_arr, array('label' => $taxonomy->label, 'name' => $taxonomy->name));
     }
 
-    wp_die(); // Terminate and return a proper response
+    wp_send_json_success($return_arr);
 
+    wp_die();
 }
-
 
 
 ?>

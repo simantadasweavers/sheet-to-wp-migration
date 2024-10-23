@@ -70,7 +70,9 @@ SELECT COLUMN INDIVISUALLY FOR SPECIFIC ROLE , means
 -> assuming my self first column for POST TITLE
 -> assuming second column for POST CONTENT
 -> third column for POST CATEGORY
-note: we can't change the ordering by ourselves. 
+note: we can't change the ordering by ourselves.
+
+CRON JOB OVERRIDE BY POST TYPES. CONFLICT!
 
 ** We should need to maintain the order => 
 POST TITLE, CONTENT, CATEGORY, TAGS, POSTID

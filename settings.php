@@ -54,7 +54,8 @@ $post_types = array_merge(array('post'), $custom_post_types);
         <div class="mb-3">
           <label for="cron-time" class="form-label">CRON Job Time</label>
           <select class="form-select" id="cron-time" aria-label="Default select example">
-            <option value="5" selected>5 Mintes</option>
+          <option value="2" selected>2 Mintes</option> 
+          <option value="5" selected>5 Mintes</option>
             <option value="7">7 Mintes</option>
             <option value="10">10 Mintes</option>
             <option value="15">15 Mintes</option>
@@ -62,6 +63,7 @@ $post_types = array_merge(array('post'), $custom_post_types);
             <option value="60">1 Hour.</option>
           </select>
         </div>
+
         <div class="mb-3">
           <label for="post-type" class="form-label">Post Type</label>
           <select class="form-select" id="post-type" aria-label="Default select example">
@@ -72,6 +74,22 @@ $post_types = array_merge(array('post'), $custom_post_types);
             <?php } ?>
           </select>
         </div>
+
+        <div class="mb-3">
+          <label for="cateory-name" class="form-label">Category</label>
+          <select class="form-select" id="cateory-name">
+            <option>Select Category</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="tag-name" class="form-label">Tags</label>
+          <select class="form-select" id="tag-name" aria-label="Default select example">
+        <option>Select Tags</option>  
+        </select>
+        </div>
+
+
         <button type="submit" id="submit-btn" class="btn btn-primary">Submit</button>
       </form>
 
@@ -97,7 +115,52 @@ $post_types = array_merge(array('post'), $custom_post_types);
       return match ? match[1] : null;
     }
 
+
+
     jQuery(document).ready(function () {
+
+      if (jQuery('#post-type').val()) {
+        let name = jQuery('#post-type').val();
+
+      }
+
+      jQuery('#post-type').change(function () {
+        let name = jQuery(this).val();
+
+        jQuery('#cateory-name').empty();
+        jQuery('#tag-name').empty();
+
+        let formData = new FormData();
+        formData.append('action', 'fetch_taxonomoes'); // Add action for AJAX
+        formData.append('post_type', name); // Add action for AJAX
+
+        jQuery.ajax({
+          type: "POST",
+          url: ajaxurl,
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (response) {
+            let data = response.data;
+
+            data.forEach(function (data) {
+              let optionHTML = `
+            <option value="${data.name}"> 
+                ${data.label} 
+            </option>`;
+              jQuery('#cateory-name').append(optionHTML);
+              jQuery('#tag-name').append(optionHTML);
+            });
+
+          },
+          error: function (response) {
+            console.error(response);
+          }
+        });
+      });
+
+
+
       jQuery('#submit-btn').on('click', function (e) {
         e.preventDefault(); // Prevent default form submission
 
@@ -114,7 +177,8 @@ $post_types = array_merge(array('post'), $custom_post_types);
               let url = document.getElementById('sheet_url').value;
               const cronTime = document.getElementById('cron-time').value;
               const postType = document.getElementById('post-type').value;
-
+              const category = document.getElementById('cateory-name').value;
+              const tag_name = document.getElementById('tag-name').value;
 
               // Create FormData object and append data
               let formData = new FormData();
@@ -132,6 +196,8 @@ $post_types = array_merge(array('post'), $custom_post_types);
               formData.append('universe_domain', jsonData.universe_domain);
               formData.append('cron_time', cronTime); // Append CRON job time
               formData.append('post_type', postType); // Append post type
+              formData.append('category', category);
+              formData.append('tag_name', tag_name);
               formData.append('action', 'save_settings'); // Add action for AJAX
 
               // Now, make the AJAX request
@@ -142,6 +208,7 @@ $post_types = array_merge(array('post'), $custom_post_types);
                 processData: false,
                 contentType: false,
                 success: function (response) {
+
                   if (response.success) {
                     alert("Settings saved successfully!");
                     <?php

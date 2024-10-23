@@ -48,11 +48,8 @@ try{
           `universe_domain` varchar(120) NULL,
           `cron_job_time` varchar(4) NULL,
           `post_type` varchar(10) NULL,
-          `gsheet_post_id` varchar(10) NULL,
-          `gsheet_post_title` varchar(10) NULL,
-          `gsheet_post_content` varchar(10) NULL,
-          `gsheet_post_category` varchar(10) NULL,
-          `gsheet_post_tags` varchar(10) NULL,
+          `post_category` varchar(30) NULL,
+          `post_tag` varchar(30) NULL,
           `created_at` varchar(200) NULL
         );
         ";
@@ -91,14 +88,6 @@ function sheet_to_wp_migration_options_page()
         'sheet_to_wp_settings'
     );
 
-    add_submenu_page(
-        $plugin_slug,
-        'Sheet Settings',
-        'Sheet Settings',
-        'manage_options',
-        'sheet_settings',
-        'sheet_settings'
-    );
 
     add_submenu_page(
         $plugin_slug,
