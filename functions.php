@@ -267,12 +267,12 @@ function posts_migration()
                             $parts = explode(",", $data['col-c']);
                             $arr = array();
                             foreach ($parts as $cat) {
-                                if (term_exists($cat, $db_row->post_category)) {
+                                if (term_exists($cat, trim($db_row->post_category))) {
                                     array_push($arr, get_cat_ID($cat));
                                 } else {
                                     $category = wp_insert_term(
                                         $cat,  // The category name
-                                        $db_row->post_category  // Taxonomy for wordpress
+                                        trim($db_row->post_category)  // Taxonomy for wordpress
                                     );
 
                                     // Check for errors and get the category ID
@@ -289,8 +289,8 @@ function posts_migration()
                             $parts = explode(",", $data['col-d']);
                             $tags_arr = array();
                             foreach ($parts as $tag) {
-                                if (term_exists($tag, $db_row->post_tag)) {
-                                    $tag = get_term_by('name', $tag, $db_row->post_tag);
+                                if (term_exists($tag, trim($db_row->post_tag))) {
+                                    $tag = get_term_by('name', $tag, trim($db_row->post_tag));
                                     if ($tag) {
                                         $tag_id = $tag->term_id;
                                     }
@@ -298,7 +298,7 @@ function posts_migration()
                                 } else {
                                     $tag = wp_insert_term(
                                         $tag,  // The tag name
-                                        $db_row->post_tag // Taxonomy: 'post_tag' for WordPress tags
+                                        trim($db_row->post_tag) // Taxonomy: 'post_tag' for WordPress tags
                                     );
 
                                     // Check for errors and get the tag ID
@@ -334,12 +334,12 @@ function posts_migration()
                             $parts = explode(",", $data['col-c']);
                             $arr = array();
                             foreach ($parts as $cat) {
-                                if (term_exists($cat, $db_row->post_category)) {
+                                if (term_exists($cat, trim($db_row->post_category))) {
                                     array_push($arr, get_cat_ID($cat));
                                 } else {
                                     $category = wp_insert_term(
                                         $cat,  // The category name
-                                        $db_row->post_category
+                                        trim($db_row->post_category)
                                     );
 
                                     // Check for errors and get the category ID
@@ -383,8 +383,8 @@ function posts_migration()
                             $parts = explode(",", $data['col-d']);
                             $arr = array();
                             foreach ($parts as $tag) {
-                                if (term_exists($tag, $db_row->post_tag)) {
-                                    $tag = get_term_by('name', $tag, $db_row->post_tag);
+                                if (term_exists($tag, trim($db_row->post_tag))) {
+                                    $tag = get_term_by('name', $tag, trim($db_row->post_tag));
                                     if ($tag) {
                                         $tag_id = $tag->term_id;
                                     }
@@ -392,7 +392,7 @@ function posts_migration()
                                 } else {
                                     $tag = wp_insert_term(
                                         $tag,  // The tag name
-                                        $db_row->post_tag  // Taxonomy: 'post_tag' for WordPress tags
+                                        trim($db_row->post_tag)  // Taxonomy: 'post_tag' for WordPress tags
                                     );
 
                                     // Check for errors and get the tag ID

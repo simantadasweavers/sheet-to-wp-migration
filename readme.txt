@@ -61,7 +61,7 @@ DUE WORK => 22 oct 2024
 1. SET CRON TIME BY SELECT BOX - 2 , 4 , 6, 8, 10, 20, 30 = done
 2. SELECT POST TYPE -> custom post type, default -> post, page
 ====================================================================================
-DUE WORK => 
+DUE WORK => 23 OCT
 
 1. LIST ALL CRONS AND DELETE OPTIONS 
 
@@ -76,3 +76,10 @@ CRON JOB OVERRIDE BY POST TYPES. CONFLICT!
 
 ** We should need to maintain the order => 
 POST TITLE, CONTENT, CATEGORY, TAGS, POSTID
+=================================================================================
+DUE WORK => 24 OCT 
+
+NEED TO FIX => 
+1. post category and tags get not linked with post and custm post types. 
+
+================================================================================
