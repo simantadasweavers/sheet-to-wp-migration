@@ -116,12 +116,102 @@ $post_types = array_merge(array('post'), $custom_post_types);
     }
 
 
+    function checkFields(){
+      // Clear all previous error messages
+      jQuery('.error-message').remove();
+
+      let isValid = true;
+
+      // Check Google Sheet URL
+      const sheetUrl = jQuery('#sheet_url').val();
+      if (sheetUrl === '') {
+        isValid = false;
+        jQuery('#sheet_url').after('<span class="error-message" style="color:red;">Google Sheet URL is required.</span>');
+      }
+
+      // Check JSON Auth File
+      const jsonFile = jQuery('#formFile').val();
+      if (jsonFile === '') {
+        isValid = false;
+        jQuery('#formFile').after('<span class="error-message" style="color:red;">JSON Auth File is required.</span>');
+      }
+
+      // Check CRON Job Time
+      const cronTime = jQuery('#cron-time').val();
+      if (cronTime === '') {
+        isValid = false;
+        jQuery('#cron-time').after('<span class="error-message" style="color:red;">Please select a CRON Job Time.</span>');
+      }
+
+      // Check Post Type
+      const postType = jQuery('#post-type').val();
+      if (postType === null || postType === '') {
+        isValid = false;
+        jQuery('#post-type').after('<span class="error-message" style="color:red;">Please select a Post Type.</span>');
+      }
+
+      // Check Category
+      const categoryName = jQuery('#cateory-name').val();
+      if (categoryName === 'Select Category') {
+        isValid = false;
+        jQuery('#cateory-name').after('<span class="error-message" style="color:red;">Please select a Category.</span>');
+      }
+
+      // Check Tags
+      const tagName = jQuery('#tag-name').val();
+      if (tagName === 'Select Tags') {
+        isValid = false;
+        jQuery('#tag-name').after('<span class="error-message" style="color:red;">Please select Tags.</span>');
+      }
+
+      // If form is valid, submit the form
+      if (isValid) {
+        jQuery('#myForm').submit(); // Submit the form if all fields are valid
+      }
+    }
+
 
     jQuery(document).ready(function () {
 
       if (jQuery('#post-type').val()) {
         let name = jQuery('#post-type').val();
+        jQuery('#cateory-name').empty();
+        jQuery('#tag-name').empty();
 
+        let formData = new FormData();
+        formData.append('action', 'fetch_taxonomoes'); // Add action for AJAX
+        formData.append('post_type', name); // Add action for AJAX
+
+        jQuery.ajax({
+          type: "POST",
+          url: ajaxurl,
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (response) {
+            let data = response.data;
+
+            let optionHTML = `
+            <option value=""> 
+            None 
+            </option>`;
+              jQuery('#cateory-name').append(optionHTML);
+              jQuery('#tag-name').append(optionHTML);
+
+            data.forEach(function (data) {
+              let optionHTML = `
+            <option value="${data.name}"> 
+                ${data.label} 
+            </option>`;
+              jQuery('#cateory-name').append(optionHTML);
+              jQuery('#tag-name').append(optionHTML);
+            });
+
+          },
+          error: function (response) {
+            console.error(response);
+          }
+        });
       }
 
       jQuery('#post-type').change(function () {
@@ -143,6 +233,13 @@ $post_types = array_merge(array('post'), $custom_post_types);
           success: function (response) {
             let data = response.data;
 
+            let optionHTML = `
+            <option value=""> 
+            None 
+            </option>`;
+              jQuery('#cateory-name').append(optionHTML);
+              jQuery('#tag-name').append(optionHTML);
+
             data.forEach(function (data) {
               let optionHTML = `
             <option value="${data.name}"> 
@@ -163,6 +260,8 @@ $post_types = array_merge(array('post'), $custom_post_types);
 
       jQuery('#submit-btn').on('click', function (e) {
         e.preventDefault(); // Prevent default form submission
+
+       // checkFields();
 
         // Get the JSON file
         const jsonFile = document.getElementById('formFile').files[0];

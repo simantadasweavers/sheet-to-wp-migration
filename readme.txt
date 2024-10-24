@@ -81,5 +81,19 @@ DUE WORK => 24 OCT
 
 NEED TO FIX => 
 1. post category and tags get not linked with post and custm post types. 
+2. settings  page default category and tags selection for post type. 
+3. CRON JOB OVERRIDE BY POST TYPES. CONFLICT!
+4. migration work for default post_type = post but not for custom post types. 
+
+DONE => 
+1. post category and tags get not linked with post and custm post types. 
+2. settings  page default category and tags selection for post type. 
 
 ================================================================================
+
+TEST CASES ==> 
+1. POST ADD , CATEGORY, TAGS
+2. POST UPDATE , WITHOUT CATEGORY AND TAGS
+3. POST UPDATE WITH CATEGORY AND TAGS
+4. POST UPDATE WITHOUT TAGS AND CATEGORY
+5. DIFFERENT POST TYPES SAME CHECK. 

@@ -263,86 +263,205 @@ function posts_migration()
                     // col-e -> post_id 
                     if ($data['col-e']) {
 
+                        // updating the post category 
+                        // if ($db_row->post_category) {
+                        //     $parts = explode(",", $data['col-c']);
+                        //     $arr = array();
+                        //     foreach ($parts as $cat) {
+                        //         if (term_exists($cat, trim($db_row->post_category))) {
+                        //             array_push($arr, get_cat_ID($cat));
+                        //         } else {
+                        //             $category = wp_insert_term(
+                        //                 $cat,  // The category name
+                        //                 trim($db_row->post_category)  // Taxonomy for wordpress
+                        //             );
+
+                        //             // Check for errors and get the category ID
+                        //             if (!is_wp_error($category)) {
+                        //                 $catid = $category['term_id'];
+                        //                 array_push($arr, $catid);
+                        //             }
+                        //         }
+                        //     }
+                        // }
+
                         if ($db_row->post_category) {
+                            // Managing categories (custom taxonomy or default)
                             $parts = explode(",", $data['col-c']);
                             $arr = array();
+
                             foreach ($parts as $cat) {
-                                if (term_exists($cat, trim($db_row->post_category))) {
-                                    array_push($arr, get_cat_ID($cat));
+                                // Use get_term_by() for any taxonomy, including custom ones
+                                $existing_term = get_term_by('name', $cat, trim($db_row->post_category));
+
+                                if ($existing_term) {
+                                    array_push($arr, $existing_term->term_id);
                                 } else {
+                                    // Insert the term into the custom taxonomy (or default category if used)
                                     $category = wp_insert_term(
-                                        $cat,  // The category name
-                                        trim($db_row->post_category)  // Taxonomy for wordpress
+                                        $cat,  // The term name
+                                        trim($db_row->post_category) // The taxonomy name
                                     );
 
-                                    // Check for errors and get the category ID
+                                    // Check for errors and get the term ID
                                     if (!is_wp_error($category)) {
                                         $catid = $category['term_id'];
                                         array_push($arr, $catid);
                                     }
                                 }
                             }
+
+                            try {
+                                $post_category = trim($db_row->post_category);
+                                // updaing post fields by post id
+                                $post_array = array(
+                                    'ID' => $data['col-e'],
+                                    'post_title' => $data['col-a'],
+                                    'post_content' => $data['col-b'],
+                                    // 'tax_input' => array(
+                                    //     "$post_category" => $arr  // Assigning the term ID(s) to the 'service_category' taxonomy
+                                    // ),
+                                );
+                                wp_update_post($post_array);
+
+                                try {
+                                    wp_set_post_terms($data['col-e'], $arr, trim($post_category));
+                                } catch (Exception $e) {
+                                    echo $e->getMessage();
+                                }
+
+                            } catch (Exception $e) {
+                                echo $e->getMessage();
+                            }
+
                         }
 
+                        // update the post tag
+                        // if ($db_row->post_tag) {
+                        //     $parts = explode(",", $data['col-d']);
+                        //     $tags_arr = array();
+                        //     foreach ($parts as $tag) {
+                        //         if (term_exists($tag, trim($db_row->post_tag))) {
+                        //             $tag = get_term_by('name', $tag, trim($db_row->post_tag));
+                        //             if ($tag) {
+                        //                 $tag_id = $tag->term_id;
+                        //             }
+                        //             array_push($tags_arr, $tag_id);
+                        //         } else {
+                        //             $tag = wp_insert_term(
+                        //                 $tag,  // The tag name
+                        //                 trim($db_row->post_tag) // Taxonomy: 'post_tag' for WordPress tags
+                        //             );
+
+                        //             // Check for errors and get the tag ID
+                        //             if (!is_wp_error($tag)) {
+                        //                 $tag_id = $tag['term_id'];
+                        //                 array_push($tags_arr, $tag_id);
+                        //             }
+                        //         }
+                        //     }
+                        // }
 
                         if ($db_row->post_tag) {
+                            // Managing tags (can be default 'post_tag' or a custom taxonomy)
                             $parts = explode(",", $data['col-d']);
                             $tags_arr = array();
+
                             foreach ($parts as $tag) {
-                                if (term_exists($tag, trim($db_row->post_tag))) {
-                                    $tag = get_term_by('name', $tag, trim($db_row->post_tag));
-                                    if ($tag) {
-                                        $tag_id = $tag->term_id;
-                                    }
-                                    array_push($tags_arr, $tag_id);
+                                // Trim the tag and get the taxonomy
+                                $taxonomy = trim($db_row->post_tag);
+                                $tag_name = trim($tag);
+
+                                // Check if the term exists in the specified taxonomy
+                                $existing_tag = get_term_by('name', $tag_name, $taxonomy);
+
+                                if ($existing_tag) {
+                                    // If the term exists, add its ID to the array
+                                    array_push($tags_arr, $existing_tag->term_id);
                                 } else {
-                                    $tag = wp_insert_term(
-                                        $tag,  // The tag name
-                                        trim($db_row->post_tag) // Taxonomy: 'post_tag' for WordPress tags
+                                    // If it doesn't exist, insert it into the taxonomy
+                                    $new_tag = wp_insert_term(
+                                        $tag_name,  // The tag name
+                                        $taxonomy  // The taxonomy name (can be custom)
                                     );
 
                                     // Check for errors and get the tag ID
-                                    if (!is_wp_error($tag)) {
-                                        $tag_id = $tag['term_id'];
+                                    if (!is_wp_error($new_tag)) {
+                                        $tag_id = $new_tag['term_id'];
                                         array_push($tags_arr, $tag_id);
                                     }
                                 }
                             }
+
+                            try {
+                                wp_set_post_terms($data['col-e'], $tags_arr, trim($db_row->post_tag));
+                            } catch (Exception $e) {
+                                echo $e->getMessage();
+                            }
                         }
 
 
-                        try {
-                            // updaing post fields by post id
-                            $post_array = array(
-                                'ID' => $data['col-e'],
-                                'post_title' => $data['col-a'],
-                                'post_content' => $data['col-b'],
-                                'post_category' => $arr,
-                                'tags_input' => $tags_arr,
-                            );
-                            wp_update_post($post_array);
+                        // try {
+                        //     $post_category = $db_row->post_category;
+                        //     // updaing post fields by post id
+                        //     $post_array = array(
+                        //         'ID' => $data['col-e'],
+                        //         'post_title' => $data['col-a'],
+                        //         'post_content' => $data['col-b'],
+                        //         'tax_input' => array(
+                        //                 "$post_category" => $arr  // Assigning the term ID(s) to the 'service_category' taxonomy
+                        //             ),
+                        //     );
+                        //     wp_update_post($post_array);
 
-                        } catch (Exception $e) {
-                            echo $e->getMessage();
-                        }
+                        // } catch (Exception $e) {
+                        //     echo $e->getMessage();
+                        // }
 
                     } else {
                         /** IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST. **/
 
+                        // if ($db_row->post_category) {
+                        //     // managing categories
+                        //     $parts = explode(",", $data['col-c']);
+                        //     $arr = array();
+                        //     foreach ($parts as $cat) {
+                        //         if (term_exists($cat, trim($db_row->post_category))) {
+                        //             array_push($arr, get_cat_ID($cat));
+                        //         } else {
+                        //             $category = wp_insert_term(
+                        //                 $cat,  // The category name
+                        //                 trim($db_row->post_category)
+                        //             );
+
+                        //             // Check for errors and get the category ID
+                        //             if (!is_wp_error($category)) {
+                        //                 $catid = $category['term_id'];
+                        //                 array_push($arr, $catid);
+                        //             }
+                        //         }
+                        //     }
+                        // }
+
                         if ($db_row->post_category) {
-                            // managing categories
+                            // Managing categories (custom taxonomy or default)
                             $parts = explode(",", $data['col-c']);
                             $arr = array();
+
                             foreach ($parts as $cat) {
-                                if (term_exists($cat, trim($db_row->post_category))) {
-                                    array_push($arr, get_cat_ID($cat));
+                                // Use get_term_by() for any taxonomy, including custom ones
+                                $existing_term = get_term_by('name', $cat, trim($db_row->post_category));
+
+                                if ($existing_term) {
+                                    array_push($arr, $existing_term->term_id);
                                 } else {
+                                    // Insert the term into the custom taxonomy (or default category if used)
                                     $category = wp_insert_term(
-                                        $cat,  // The category name
-                                        trim($db_row->post_category)
+                                        $cat,  // The term name
+                                        trim($db_row->post_category) // The taxonomy name
                                     );
 
-                                    // Check for errors and get the category ID
+                                    // Check for errors and get the term ID
                                     if (!is_wp_error($category)) {
                                         $catid = $category['term_id'];
                                         array_push($arr, $catid);
@@ -363,41 +482,79 @@ function posts_migration()
 
                                 $post_id = wp_insert_post($new_post);
                             } else {
+                                // $post_category = trim($db_row->post_category);
                                 $new_post = array(
                                     'post_title' => $data['col-a'],
                                     'post_content' => $data['col-b'],
                                     'post_status' => 'publish',
-                                    'post_category' => $arr,  // Category ID(s)
-                                    'post_type' => $post_type,
+                                    // 'post_category' => $arr,  // Category ID(s)
+                                    // 'tax_input' => array(
+                                    //     $post_category => $arr  // Assigning the term ID(s) to the 'service_category' taxonomy
+                                    // ),
+                                    'post_type' => trim($post_type),
                                 );
 
                                 $post_id = wp_insert_post($new_post);
+
+                                wp_set_post_terms($post_id, $arr, trim($db_row->post_category));
                             }
                         } catch (Exception $e) {
                             echo $e->getMessage();
                         }
 
 
+                        // if ($db_row->post_tag) {
+                        //     // managing tags for the post
+                        //     $parts = explode(",", $data['col-d']);
+                        //     $arr = array();
+                        //     foreach ($parts as $tag) {
+                        //         if (term_exists($tag, trim($db_row->post_tag))) {
+                        //             $tag = get_term_by('name', $tag, trim($db_row->post_tag));
+                        //             if ($tag) {
+                        //                 $tag_id = $tag->term_id;
+                        //             }
+                        //             array_push($arr, $tag_id);
+                        //         } else {
+                        //             $tag = wp_insert_term(
+                        //                 $tag,  // The tag name
+                        //                 trim($db_row->post_tag)  // Taxonomy: 'post_tag' for WordPress tags
+                        //             );
+
+                        //             // Check for errors and get the tag ID
+                        //             if (!is_wp_error($tag)) {
+                        //                 $tag_id = $tag['term_id'];
+                        //                 array_push($arr, $tag_id);
+                        //             }
+                        //         }
+                        //     }
+                        // }
+
                         if ($db_row->post_tag) {
-                            // managing tags for the post
+                            // Managing tags (can be default 'post_tag' or a custom taxonomy)
                             $parts = explode(",", $data['col-d']);
                             $arr = array();
+
                             foreach ($parts as $tag) {
-                                if (term_exists($tag, trim($db_row->post_tag))) {
-                                    $tag = get_term_by('name', $tag, trim($db_row->post_tag));
-                                    if ($tag) {
-                                        $tag_id = $tag->term_id;
-                                    }
-                                    array_push($arr, $tag_id);
+                                // Trim the tag and get the taxonomy
+                                $taxonomy = trim($db_row->post_tag);
+                                $tag_name = trim($tag);
+
+                                // Check if the term exists in the specified taxonomy
+                                $existing_tag = get_term_by('name', $tag_name, $taxonomy);
+
+                                if ($existing_tag) {
+                                    // If the term exists, add its ID to the array
+                                    array_push($arr, $existing_tag->term_id);
                                 } else {
-                                    $tag = wp_insert_term(
-                                        $tag,  // The tag name
-                                        trim($db_row->post_tag)  // Taxonomy: 'post_tag' for WordPress tags
+                                    // If it doesn't exist, insert it into the taxonomy
+                                    $new_tag = wp_insert_term(
+                                        $tag_name,  // The tag name
+                                        $taxonomy  // The taxonomy name (can be custom)
                                     );
 
                                     // Check for errors and get the tag ID
-                                    if (!is_wp_error($tag)) {
-                                        $tag_id = $tag['term_id'];
+                                    if (!is_wp_error($new_tag)) {
+                                        $tag_id = $new_tag['term_id'];
                                         array_push($arr, $tag_id);
                                     }
                                 }
@@ -405,12 +562,14 @@ function posts_migration()
                         }
 
 
+
                         if ($arr != NULL) {
-                            $post_array = array(
-                                'ID' => $post_id,
-                                'tags_input' => $arr,  // 'tags_input' is for tags, not 'post_category'
-                            );
-                            wp_update_post($post_array);
+                            // $post_array = array(
+                            //     'ID' => $post_id,
+                            //     'tags_input' => $arr,  // 'tags_input' is for tags, not 'post_category'
+                            // );
+                            // wp_update_post($post_array);
+                            wp_set_post_terms($post_id, $arr, trim($db_row->post_tag));
                         }
                         // end managing of tags for post type
 

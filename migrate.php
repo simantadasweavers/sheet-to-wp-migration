@@ -35,8 +35,8 @@
     ?>
 
     <div class="row">
-        <div class="col-2"></div>
-        <div class="col-8">
+        <div class="col-1"></div>
+        <div class="col-10">
 
             <p class="text-center fs-5">Review Google Sheet Settings Before Migration</p>
             <table class="table">
@@ -46,15 +46,22 @@
                         <th scope="col">POST TYPE</th>
                         <th scope="col">CATEGORY</th>
                         <th scope="col">TAG</th>
+                        <th scope="col">CRON JOB TIME</th>
                     </tr>
                 </thead>
                 <tbody>
-                    
+                    <tr>
+                        <td><?php echo $last_record->google_sheet_url; ?></td>
+                        <td><?php echo $last_record->post_type; ?></td>
+                        <td><?php echo $last_record->post_category; ?></td>
+                        <td><?php echo $last_record->post_tag; ?></td>
+                        <td><?php echo $last_record->cron_job_time." Minutes"; ?></td>
+                    </tr>
                 </tbody>
             </table>
 
         </div>
-        <div class="col-2"></div>
+        <div class="col-1"></div>
     </div>
 
     <script>
