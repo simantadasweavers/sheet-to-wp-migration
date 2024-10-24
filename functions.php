@@ -263,28 +263,6 @@ function posts_migration()
                     // col-e -> post_id 
                     if ($data['col-e']) {
 
-                        // updating the post category 
-                        // if ($db_row->post_category) {
-                        //     $parts = explode(",", $data['col-c']);
-                        //     $arr = array();
-                        //     foreach ($parts as $cat) {
-                        //         if (term_exists($cat, trim($db_row->post_category))) {
-                        //             array_push($arr, get_cat_ID($cat));
-                        //         } else {
-                        //             $category = wp_insert_term(
-                        //                 $cat,  // The category name
-                        //                 trim($db_row->post_category)  // Taxonomy for wordpress
-                        //             );
-
-                        //             // Check for errors and get the category ID
-                        //             if (!is_wp_error($category)) {
-                        //                 $catid = $category['term_id'];
-                        //                 array_push($arr, $catid);
-                        //             }
-                        //         }
-                        //     }
-                        // }
-
                         if ($db_row->post_category) {
                             // Managing categories (custom taxonomy or default)
                             $parts = explode(",", $data['col-c']);
@@ -318,9 +296,6 @@ function posts_migration()
                                     'ID' => $data['col-e'],
                                     'post_title' => $data['col-a'],
                                     'post_content' => $data['col-b'],
-                                    // 'tax_input' => array(
-                                    //     "$post_category" => $arr  // Assigning the term ID(s) to the 'service_category' taxonomy
-                                    // ),
                                 );
                                 wp_update_post($post_array);
 
@@ -336,31 +311,6 @@ function posts_migration()
 
                         }
 
-                        // update the post tag
-                        // if ($db_row->post_tag) {
-                        //     $parts = explode(",", $data['col-d']);
-                        //     $tags_arr = array();
-                        //     foreach ($parts as $tag) {
-                        //         if (term_exists($tag, trim($db_row->post_tag))) {
-                        //             $tag = get_term_by('name', $tag, trim($db_row->post_tag));
-                        //             if ($tag) {
-                        //                 $tag_id = $tag->term_id;
-                        //             }
-                        //             array_push($tags_arr, $tag_id);
-                        //         } else {
-                        //             $tag = wp_insert_term(
-                        //                 $tag,  // The tag name
-                        //                 trim($db_row->post_tag) // Taxonomy: 'post_tag' for WordPress tags
-                        //             );
-
-                        //             // Check for errors and get the tag ID
-                        //             if (!is_wp_error($tag)) {
-                        //                 $tag_id = $tag['term_id'];
-                        //                 array_push($tags_arr, $tag_id);
-                        //             }
-                        //         }
-                        //     }
-                        // }
 
                         if ($db_row->post_tag) {
                             // Managing tags (can be default 'post_tag' or a custom taxonomy)
@@ -400,49 +350,10 @@ function posts_migration()
                             }
                         }
 
-
-                        // try {
-                        //     $post_category = $db_row->post_category;
-                        //     // updaing post fields by post id
-                        //     $post_array = array(
-                        //         'ID' => $data['col-e'],
-                        //         'post_title' => $data['col-a'],
-                        //         'post_content' => $data['col-b'],
-                        //         'tax_input' => array(
-                        //                 "$post_category" => $arr  // Assigning the term ID(s) to the 'service_category' taxonomy
-                        //             ),
-                        //     );
-                        //     wp_update_post($post_array);
-
-                        // } catch (Exception $e) {
-                        //     echo $e->getMessage();
-                        // }
-
                     } else {
                         /** IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST. **/
 
-                        // if ($db_row->post_category) {
-                        //     // managing categories
-                        //     $parts = explode(",", $data['col-c']);
-                        //     $arr = array();
-                        //     foreach ($parts as $cat) {
-                        //         if (term_exists($cat, trim($db_row->post_category))) {
-                        //             array_push($arr, get_cat_ID($cat));
-                        //         } else {
-                        //             $category = wp_insert_term(
-                        //                 $cat,  // The category name
-                        //                 trim($db_row->post_category)
-                        //             );
-
-                        //             // Check for errors and get the category ID
-                        //             if (!is_wp_error($category)) {
-                        //                 $catid = $category['term_id'];
-                        //                 array_push($arr, $catid);
-                        //             }
-                        //         }
-                        //     }
-                        // }
-
+                        // POST CATEGORY
                         if ($db_row->post_category) {
                             // Managing categories (custom taxonomy or default)
                             $parts = explode(",", $data['col-c']);
@@ -487,48 +398,23 @@ function posts_migration()
                                     'post_title' => $data['col-a'],
                                     'post_content' => $data['col-b'],
                                     'post_status' => 'publish',
-                                    // 'post_category' => $arr,  // Category ID(s)
-                                    // 'tax_input' => array(
-                                    //     $post_category => $arr  // Assigning the term ID(s) to the 'service_category' taxonomy
-                                    // ),
-                                    'post_type' => trim($post_type),
+                                    'post_type' => $post_type,
                                 );
 
                                 $post_id = wp_insert_post($new_post);
 
-                                wp_set_post_terms($post_id, $arr, trim($db_row->post_category));
+                                try {
+                                    wp_set_post_terms($post_id, $arr, trim($db_row->post_category));
+                                } catch (Exception $e) {
+                                    echo $e->getMessage();
+                                }
                             }
                         } catch (Exception $e) {
                             echo $e->getMessage();
                         }
 
 
-                        // if ($db_row->post_tag) {
-                        //     // managing tags for the post
-                        //     $parts = explode(",", $data['col-d']);
-                        //     $arr = array();
-                        //     foreach ($parts as $tag) {
-                        //         if (term_exists($tag, trim($db_row->post_tag))) {
-                        //             $tag = get_term_by('name', $tag, trim($db_row->post_tag));
-                        //             if ($tag) {
-                        //                 $tag_id = $tag->term_id;
-                        //             }
-                        //             array_push($arr, $tag_id);
-                        //         } else {
-                        //             $tag = wp_insert_term(
-                        //                 $tag,  // The tag name
-                        //                 trim($db_row->post_tag)  // Taxonomy: 'post_tag' for WordPress tags
-                        //             );
-
-                        //             // Check for errors and get the tag ID
-                        //             if (!is_wp_error($tag)) {
-                        //                 $tag_id = $tag['term_id'];
-                        //                 array_push($arr, $tag_id);
-                        //             }
-                        //         }
-                        //     }
-                        // }
-
+                        // POST TAGS
                         if ($db_row->post_tag) {
                             // Managing tags (can be default 'post_tag' or a custom taxonomy)
                             $parts = explode(",", $data['col-d']);
@@ -564,11 +450,6 @@ function posts_migration()
 
 
                         if ($arr != NULL) {
-                            // $post_array = array(
-                            //     'ID' => $post_id,
-                            //     'tags_input' => $arr,  // 'tags_input' is for tags, not 'post_category'
-                            // );
-                            // wp_update_post($post_array);
                             wp_set_post_terms($post_id, $arr, trim($db_row->post_tag));
                         }
                         // end managing of tags for post type
