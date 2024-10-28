@@ -82,7 +82,7 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        console.log(response);
+                       // console.log(response);
                         if (response.success) {
                             Swal.fire({
                                 icon: "success",
@@ -92,8 +92,8 @@
                         } else {
                             Swal.fire({
                                 icon: "error",
-                                title: "Oops...",
-                                text: "Migration Task Not Schedulled. Set the Auth Settings!",
+                                title: "Wait!",
+                                text: response.data,
                             });
                         }
 

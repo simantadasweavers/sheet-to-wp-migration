@@ -243,9 +243,9 @@ function posts_migration()
                         'col-c' => isset($row[2]) ? $row[2] : '',
                         'col-d' => isset($row[3]) ? $row[3] : '',
                         'col-e' => isset($row[4]) ? $row[4] : '',
-                        'col-f' => isset($row[5]) ? $row[5] : '',
-                        'col-g' => isset($row[6]) ? $row[6] : '',
-                        'col-h' => isset($row[7]) ? $row[7] : '',
+                        // 'col-f' => isset($row[5]) ? $row[5] : '',
+                        // 'col-g' => isset($row[6]) ? $row[6] : '',
+                        // 'col-h' => isset($row[7]) ? $row[7] : '',
                     ];
 
                     $currentRow++;
@@ -289,26 +289,27 @@ function posts_migration()
                                 }
                             }
 
-                            try {
-                                $post_category = trim($db_row->post_category);
-                                // updaing post fields by post id
-                                $post_array = array(
-                                    'ID' => $data['col-e'],
-                                    'post_title' => $data['col-a'],
-                                    'post_content' => $data['col-b'],
-                                );
-                                wp_update_post($post_array);
+                        }
+                        
+                        // updating the post title, content by ID
+                        try {
+                            // updaing post fields by post id
+                            $post_array = array(
+                                'ID' => $data['col-e'],
+                                'post_title' => $data['col-a'],
+                                'post_content' => $data['col-b'],
+                            );
+                            wp_update_post($post_array);
 
-                                try {
-                                    wp_set_post_terms($data['col-e'], $arr, trim($post_category));
-                                } catch (Exception $e) {
-                                    echo $e->getMessage();
-                                }
+                        } catch (Exception $e) {
+                            echo $e->getMessage();
+                        }
 
-                            } catch (Exception $e) {
-                                echo $e->getMessage();
-                            }
-
+                        try {
+                            $post_category = trim($db_row->post_category);
+                            wp_set_post_terms($data['col-e'], $arr, trim($post_category));
+                        } catch (Exception $e) {
+                            echo $e->getMessage();
                         }
 
 
