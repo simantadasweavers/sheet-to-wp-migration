@@ -97,3 +97,12 @@ TEST CASES ==>
 3. POST UPDATE WITH CATEGORY AND TAGS
 4. POST UPDATE WITHOUT TAGS AND CATEGORY
 5. DIFFERENT POST TYPES SAME CHECK. 
+
+DONE ALL. 
+
+PROBLEMS STILL => 
+1. ONLY CAN SET FOR ONE POST TYPE AT A TIME. 
+2. IF CRON JOB SET THEN, BEFORE CREATING A NEW ONE IT REQUIRS PREVIOUS ONE DELETION.
+[REQUIRED PLUGIN: CRON JOBS ARIEL: https://wordpress.org/plugins/leira-cron-jobs/#can%20i%20manage%20wordpress%20schedules%3F]
+========================================================================================
+
