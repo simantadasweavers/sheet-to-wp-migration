@@ -146,8 +146,8 @@ $custom_post_types = get_post_types($args, 'names');
     <br>
 
     <div class="row">
-      <div class="col-2"></div>
-      <div class="col-8" style="border: 2px solid green;">
+      <div class="col-1"></div>
+      <div class="col-10" style="border: 2px solid green;">
         <h3>Step 1: Paste Your Full Google Sheet URL, like below.</h3>
         <font>https://docs.google.com/spreadsheets/d/1I9ypsvUFFcg9MN2xwbHCOLon7m7W8jgfNArEJAo1zz8/edit?gid=0#gid=0
         </font>
@@ -183,6 +183,7 @@ $custom_post_types = get_post_types($args, 'names');
               <th scope="col">POST CONTENT</th>
               <th scope="col">CATEGORIES</th>
               <th scope="col">TAGS</th>
+              <th scope="col">POST ID(<font style='color: red;'>Should be Null</font>)</th>
               <th scope="col">META BOX 1</th>
               <th scope="col">META BOX 2</th>
               <th scope="col">META BOX 3</th>
@@ -193,6 +194,11 @@ $custom_post_types = get_post_types($args, 'names');
         </table>
   
         <img src="<?php echo plugin_dir_url( __FILE__ ); ?>/google-sheet-sample.png" class="img-fluid" alt="...">
+
+        <br>
+        <br>
+
+        <h3>Step 4: Make sure your Google Sheet Post ID Should be Null before migration!</h3>
 
       </div>
       <div class="col-2"></div>
