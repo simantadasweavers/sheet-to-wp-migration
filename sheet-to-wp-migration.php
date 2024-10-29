@@ -50,6 +50,11 @@ try{
           `post_type` varchar(10) NULL,
           `post_category` varchar(30) NULL,
           `post_tag` varchar(30) NULL,
+          `meta_box_1` varchar(20) NULL,
+          `meta_box_2` varchar(20) NULL,
+          `meta_box_3` varchar(20) NULL,
+          `meta_box_4` varchar(20) NULL,
+          `meta_box_5` varchar(20) NULL,
           `created_at` varchar(200) NULL
         );
         ";

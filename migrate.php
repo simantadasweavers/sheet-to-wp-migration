@@ -55,7 +55,7 @@
                         <td><?php echo $last_record->post_type; ?></td>
                         <td><?php echo $last_record->post_category; ?></td>
                         <td><?php echo $last_record->post_tag; ?></td>
-                        <td><?php echo $last_record->cron_job_time." Minutes"; ?></td>
+                        <td><?php echo $last_record->cron_job_time ? $last_record->cron_job_time." Minutes" : ""; ?></td>
                     </tr>
                 </tbody>
             </table>
@@ -82,7 +82,6 @@
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                       // console.log(response);
                         if (response.success) {
                             Swal.fire({
                                 icon: "success",

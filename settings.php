@@ -90,6 +90,41 @@ $custom_post_types = get_post_types($args, 'names');
             </select>
           </div>
 
+          <div class="mb-3">
+            <label for="tag-name" class="form-label">Custom Field 1</label>
+            <select class="form-select" id="custom-field-1" aria-label="Default select example">
+              <option>Select Tags</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="tag-name" class="form-label">Custom Field 2</label>
+            <select class="form-select" id="custom-field-2" aria-label="Default select example">
+              <option>Select Tags</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="tag-name" class="form-label">Custom Field 3</label>
+            <select class="form-select" id="custom-field-3" aria-label="Default select example">
+              <option>Select Tags</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="tag-name" class="form-label">Custom Field 4</label>
+            <select class="form-select" id="custom-field-4" aria-label="Default select example">
+              <option>Select Tags</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="tag-name" class="form-label">Custom Field 5</label>
+            <select class="form-select" id="custom-field-5" aria-label="Default select example">
+              <option>Select Tags</option>
+            </select>
+          </div>
+
 
           <button type="submit" id="submit-btn" class="btn btn-primary">Submit</button>
         </form>
@@ -148,7 +183,11 @@ $custom_post_types = get_post_types($args, 'names');
               <th scope="col">POST CONTENT</th>
               <th scope="col">CATEGORIES</th>
               <th scope="col">TAGS</th>
-              <th scope="col">POST ID</th>
+              <th scope="col">META BOX 1</th>
+              <th scope="col">META BOX 2</th>
+              <th scope="col">META BOX 3</th>
+              <th scope="col">META BOX 4</th>
+              <th scope="col">META BOX 5</th>
             </tr>
           </thead>
         </table>
@@ -231,10 +270,18 @@ $custom_post_types = get_post_types($args, 'names');
           let name = jQuery('#post-type').val();
           jQuery('#cateory-name').empty();
           jQuery('#tag-name').empty();
+          jQuery('#custom-field-1').empty();
+          jQuery('#custom-field-2').empty();
+          jQuery('#custom-field-3').empty();
+          jQuery('#custom-field-4').empty();
+          jQuery('#custom-field-5').empty();
 
           let formData = new FormData();
+          let formData2 = new FormData();
           formData.append('action', 'fetch_taxonomoes'); // Add action for AJAX
           formData.append('post_type', name); // Add action for AJAX
+          formData2.append('action', 'fetch_acf_fields'); // Add action for AJAX
+          formData2.append('post_type', name); // Add action for AJAX
 
           jQuery.ajax({
             type: "POST",
@@ -259,6 +306,42 @@ $custom_post_types = get_post_types($args, 'names');
             </option>`;
                 jQuery('#cateory-name').append(optionHTML);
                 jQuery('#tag-name').append(optionHTML);
+              });
+            },
+            error: function (response) {
+              console.error(response);
+            }
+          });
+
+          jQuery.ajax({
+            type: "POST",
+            url: ajaxurl,
+            data: formData2,
+            processData: false,
+            contentType: false,
+            success: function (response) { 
+              let data = response.data;
+
+              let optionHTML = `
+            <option value=""> 
+            None 
+            </option>`;
+            jQuery('#custom-field-1').append(optionHTML);
+              jQuery('#custom-field-2').append(optionHTML);
+              jQuery('#custom-field-3').append(optionHTML);
+              jQuery('#custom-field-4').append(optionHTML);
+              jQuery('#custom-field-5').append(optionHTML);
+
+              data.forEach(function (data) {
+                let optionHTML = `
+            <option value="${data.name}"> 
+                ${data.label} 
+            </option>`;
+                jQuery('#custom-field-1').append(optionHTML);
+              jQuery('#custom-field-2').append(optionHTML);
+              jQuery('#custom-field-3').append(optionHTML);
+              jQuery('#custom-field-4').append(optionHTML);
+              jQuery('#custom-field-5').append(optionHTML);
               });
 
             },
@@ -268,15 +351,23 @@ $custom_post_types = get_post_types($args, 'names');
           });
         }
 
+        // fetch defaults category and tags against default post type select.
         jQuery('#post-type').change(function () {
           let name = jQuery(this).val();
-
           jQuery('#cateory-name').empty();
           jQuery('#tag-name').empty();
+          jQuery('#custom-field-1').empty();
+          jQuery('#custom-field-2').empty();
+          jQuery('#custom-field-3').empty();
+          jQuery('#custom-field-4').empty();
+          jQuery('#custom-field-5').empty();
 
           let formData = new FormData();
+          let formData2 = new FormData();
           formData.append('action', 'fetch_taxonomoes'); // Add action for AJAX
           formData.append('post_type', name); // Add action for AJAX
+          formData2.append('action', 'fetch_acf_fields'); // Add action for AJAX
+          formData2.append('post_type', name); // Add action for AJAX
 
           jQuery.ajax({
             type: "POST",
@@ -302,15 +393,54 @@ $custom_post_types = get_post_types($args, 'names');
                 jQuery('#cateory-name').append(optionHTML);
                 jQuery('#tag-name').append(optionHTML);
               });
+            },
+            error: function (response) {
+              console.error(response);
+            }
+          });
+
+
+          jQuery.ajax({
+            type: "POST",
+            url: ajaxurl,
+            data: formData2,
+            processData: false,
+            contentType: false,
+            success: function (response) { 
+              let data = response.data;
+
+              let optionHTML = `
+            <option value=""> 
+            None 
+            </option>`;
+            jQuery('#custom-field-1').append(optionHTML);
+              jQuery('#custom-field-2').append(optionHTML);
+              jQuery('#custom-field-3').append(optionHTML);
+              jQuery('#custom-field-4').append(optionHTML);
+              jQuery('#custom-field-5').append(optionHTML);
+
+              data.forEach(function (data) {
+                let optionHTML = `
+            <option value="${data.name}"> 
+                ${data.label} 
+            </option>`;
+                jQuery('#custom-field-1').append(optionHTML);
+              jQuery('#custom-field-2').append(optionHTML);
+              jQuery('#custom-field-3').append(optionHTML);
+              jQuery('#custom-field-4').append(optionHTML);
+              jQuery('#custom-field-5').append(optionHTML);
+              });
 
             },
             error: function (response) {
               console.error(response);
             }
           });
+
         });
 
-
+        
+       
 
         jQuery('#submit-btn').on('click', function (e) {
           e.preventDefault(); // Prevent default form submission
@@ -332,6 +462,11 @@ $custom_post_types = get_post_types($args, 'names');
                 const postType = document.getElementById('post-type').value;
                 const category = document.getElementById('cateory-name').value;
                 const tag_name = document.getElementById('tag-name').value;
+                const field1 = document.getElementById('custom-field-1').value;
+                const field2 = document.getElementById('custom-field-2').value;
+                const field3 = document.getElementById('custom-field-3').value;
+                const field4 = document.getElementById('custom-field-4').value;
+                const field5 = document.getElementById('custom-field-5').value;
 
                 // Create FormData object and append data
                 let formData = new FormData();
@@ -351,6 +486,12 @@ $custom_post_types = get_post_types($args, 'names');
                 formData.append('post_type', postType); // Append post type
                 formData.append('category', category);
                 formData.append('tag_name', tag_name);
+
+                formData.append('field1', field1);
+                formData.append('field2', field2);
+                formData.append('field3', field3);
+                formData.append('field4', field4);
+                formData.append('field5', field5);
                 formData.append('action', 'save_settings'); // Add action for AJAX
 
                 // Now, make the AJAX request

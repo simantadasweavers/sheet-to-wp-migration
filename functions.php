@@ -26,6 +26,11 @@ function save_settings()
     $post_type = sanitize_text_field($_POST['post_type']);
     $post_category = sanitize_text_field($_POST['category']);
     $post_tag_name = sanitize_text_field($_POST['tag_name']);
+    $field1 = sanitize_text_field($_POST['field1']);
+    $field2 = sanitize_text_field($_POST['field2']);
+    $field3 = sanitize_text_field($_POST['field3']);
+    $field4 = sanitize_text_field($_POST['field4']);
+    $field5 = sanitize_text_field($_POST['field5']);
 
     /**** checking google sheet connection ****/
     try {
@@ -47,7 +52,7 @@ function save_settings()
             "token_uri" => $token_uri,
             "auth_provider_x509_cert_url" => $auth_provider_x509_cert_url,
             "client_x509_cert_url" => $client_x509_cert_url,
-            "universe_domain" => $universe_domain
+            "universe_domain" => $universe_domain,
         ]);
 
 
@@ -84,6 +89,11 @@ function save_settings()
         'post_type' => $post_type,
         'post_category' => $post_category,
         'post_tag' => $post_tag_name,
+        "meta_box_1" => $field1,
+            "meta_box_2" => $field2,
+            "meta_box_3" => $field3,
+            "meta_box_4" => $field4,
+            "meta_box_5" => $field5,
         'created_at' => date('d-m-Y H:i:s')
     );
 
@@ -174,7 +184,6 @@ function handle_posts_migration()
 
 // Hook for custom posts migration
 add_action('custom_posts_migration', 'posts_migration');
-
 function posts_migration()
 {
 
@@ -236,6 +245,11 @@ function posts_migration()
                      * col-c -> POST CATEGORY
                      * col-d -> POST TAGS
                      * col-e -> POST ID
+                     * * col-f -> META BOX 1
+                     * * col-g -> META BOX 2
+                     * * col-h -> META BOX 3
+                     * * col-i -> META BOX 4
+                     * * col-j -> META BOX 5
                      */
                     $data[] = [
                         'col-a' => isset($row[0]) ? $row[0] : '',
@@ -243,9 +257,11 @@ function posts_migration()
                         'col-c' => isset($row[2]) ? $row[2] : '',
                         'col-d' => isset($row[3]) ? $row[3] : '',
                         'col-e' => isset($row[4]) ? $row[4] : '',
-                        // 'col-f' => isset($row[5]) ? $row[5] : '',
-                        // 'col-g' => isset($row[6]) ? $row[6] : '',
-                        // 'col-h' => isset($row[7]) ? $row[7] : '',
+                        'col-f' => isset($row[5]) ? $row[5] : '',
+                        'col-g' => isset($row[6]) ? $row[6] : '',
+                        'col-h' => isset($row[7]) ? $row[7] : '',
+                        'col-i' => isset($row[7]) ? $row[7] : '',
+                        'col-j' => isset($row[7]) ? $row[7] : '',
                     ];
 
                     $currentRow++;
@@ -350,6 +366,52 @@ function posts_migration()
                                 echo $e->getMessage();
                             }
                         }
+
+                        // updating meta box 1
+                        if ($db_row->meta_box_1) {
+                        try{
+                            update_post_meta($data['col-e'],trim($db_row->meta_box_1),$data['col-f']);
+                        }catch(Exception $e){
+                            echo $e->getMessage();
+                        }
+                        }
+
+                        // updating meta box 2
+                        if ($db_row->meta_box_2) {
+                           try{
+                            update_post_meta($data['col-e'],trim($db_row->meta_box_2),$data['col-g']);
+                           }catch(Exception $e){
+                            echo $e->getMessage();
+                           }
+                        }
+
+                        // updating meta box 3
+                        if ($db_row->meta_box_3) {
+                            try{
+                                update_post_meta($data['col-e'],trim($db_row->meta_box_3),$data['col-h']);
+                               }catch(Exception $e){
+                                echo $e->getMessage();
+                               }
+                        }
+
+                        // updating meta box 4
+                        if ($db_row->meta_box_4) {
+                            try{
+                                update_post_meta($data['col-e'],trim($db_row->meta_box_4),$data['col-i']);
+                               }catch(Exception $e){
+                                echo $e->getMessage();
+                               }
+                        }
+
+                        // updating meta box 5
+                        if ($db_row->meta_box_5) {
+                            try{
+                                update_post_meta($data['col-e'],trim($db_row->meta_box_5),$data['col-j']);
+                               }catch(Exception $e){
+                                echo $e->getMessage();
+                               }
+                        }
+
 
                     } else {
                         /** IF POST ID NOT FOUND, THEN CREATE INSERT POSTID INTO SHEET AND CREATE NEW POST. **/
@@ -526,7 +588,31 @@ function fetch_taxonomoes()
     }
 
     wp_send_json_success($return_arr);
+    wp_die();
+}
 
+
+add_action('wp_ajax_fetch_acf_fields', 'fetch_acf_fields');
+function fetch_acf_fields()
+{
+    $post_type = sanitize_text_field($_POST['post_type']);
+
+    $return_arr = array();
+
+    // Get ACF field groups for the current post type
+    $field_groups = acf_get_field_groups(array('post_type' => $post_type));
+    if ($field_groups) {
+        foreach ($field_groups as $field_group) {
+            // Get fields in the current field group , ex: post custom fields, home page etc.
+            $fields = acf_get_fields($field_group['ID']);
+            if ($fields) {
+                foreach ($fields as $field) {
+                  array_push($return_arr, array('label' => $field['label'], 'name' => $field['name']));
+                }
+            }
+        }
+    }
+    wp_send_json_success($return_arr);
     wp_die();
 }
 
