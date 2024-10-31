@@ -200,6 +200,10 @@ $post_types = array_merge(array('post'), $custom_post_types);
 
       <h3>Step 4: Make sure your Google Sheet Post ID Should be Null before migration!</h3>
 
+      <br>
+
+      <h3>Step 5: Enable Google Sheet API in Projet. <br/> Go to: Api & Services > Enable Api Services > Search Google Sheet Api. Now enable it. </h3>
+
     </div>
     <div class="col-2"></div>
   </div>
@@ -355,7 +359,6 @@ $post_types = array_merge(array('post'), $custom_post_types);
                 jQuery('#custom-field-5').append(optionHTML);
               });
             }
-
           },
           error: function (response) {
             console.error(response);
