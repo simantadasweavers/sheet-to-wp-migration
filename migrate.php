@@ -28,10 +28,14 @@
 
     <?php
     global $wpdb;
-    $table_name = $wpdb->prefix . 'sheet_to_wp_post';
+    try{
+        $table_name = $wpdb->prefix . 'sheet_to_wp_post';
 
     // Fetch the last record from the table
     $last_record = $wpdb->get_row("SELECT * FROM $table_name ORDER BY id DESC LIMIT 1");
+    }catch(Exception $e){
+        echo $e->getMessage();
+    }
     ?>
 
     <div class="row">
@@ -51,11 +55,11 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><?php echo $last_record->google_sheet_url; ?></td>
-                        <td><?php echo $last_record->post_type; ?></td>
-                        <td><?php echo $last_record->post_category; ?></td>
-                        <td><?php echo $last_record->post_tag; ?></td>
-                        <td><?php echo $last_record->cron_job_time ? $last_record->cron_job_time." Minutes" : ""; ?></td>
+                        <td><?php if(! empty($last_record->google_sheet_url)){echo $last_record->google_sheet_url;} ?></td>
+                        <td><?php if(!empty($last_record->post_type)){echo $last_record->post_type;} ?></td>
+                        <td><?php if(!empty($last_record->post_category)){echo $last_record->post_category;} ?></td>
+                        <td><?php if(!empty($last_record->post_tag)){echo $last_record->post_tag;} ?></td>
+                        <td><?php if(!empty($last_record->cron_job_time)){echo $last_record->cron_job_time ? $last_record->cron_job_time." Minutes" : "";} ?></td>
                     </tr>
                 </tbody>
             </table>
